@@ -1,2 +1,0 @@
-# kaleidoscope
-tessellation sandbox
