@@ -1,4 +1,5 @@
 import React from 'react';
+import './DisplayArea.css';
 
 class DisplayArea extends React.Component {
   constructor(props) {

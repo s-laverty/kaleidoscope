@@ -1,4 +1,5 @@
 import React from 'react';
+import './MainToolbar.css';
 
 class MainToolbar extends React.Component {
   constructor(props) {
