@@ -6,8 +6,6 @@ class DisplayArea extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      width: 0,
-      height: 0,
       scrollX: 0,
       scrollY: 0,
       scale: 1.0,
@@ -30,10 +28,7 @@ class DisplayArea extends React.Component {
   }
 
   handleResize() {
-    this.setState(state => ({...state,
-        width: this.container.current.clientWidth,
-        height: this.container.current.clientHeight
-    }));
+    this.forceUpdate();
   }
 
   handleWheel(e) {
@@ -96,7 +91,7 @@ class DisplayArea extends React.Component {
 
   componentDidMount() {
     window.addEventListener('resize', this.handleResize);
-    this.handleResize();
+    this.forceUpdate();
   }
 
   componentWillUnmount() {
@@ -105,23 +100,27 @@ class DisplayArea extends React.Component {
 
   render() {
     const hexes = [];
-    let t = (-this.state.height / 2 + this.state.scrollY) / this.state.scale;
-    let b = (this.state.height / 2 + this.state.scrollY) / this.state.scale;
-    let l = (-this.state.width / 2 + this.state.scrollX) / this.state.scale;
-    let r = (this.state.width / 2 + this.state.scrollX) / this.state.scale;
-    const hexdims = Hexagon.visibleInBox(t,r,b,l);
-    l = hexdims.l;
-    r = hexdims.r;
-    for (let y = hexdims.t, i = 0; y <= hexdims.b; ++y,++i) {
-      for (let x = l; x <= r; ++x) {
-        const key = `${x},${y}`;
-        let color = this.state.hexdata[key];
-        if (color === undefined) color = 'lightgray';
-        hexes.push(<Hexagon key={key} x={x} y={y} color={color}
-          onClick={this.handleClick}></Hexagon>);
+    if (this.container.current) {
+      let width = this.container.current.clientWidth;
+      let height = this.container.current.clientHeight;
+      let t = (-height / 2 + this.state.scrollY) / this.state.scale;
+      let b = (height / 2 + this.state.scrollY) / this.state.scale;
+      let l = (-width / 2 + this.state.scrollX) / this.state.scale;
+      let r = (width / 2 + this.state.scrollX) / this.state.scale;
+      const hexdims = Hexagon.visibleInBox(t,r,b,l);
+      l = hexdims.l;
+      r = hexdims.r;
+      for (let y = hexdims.t, i = 0; y <= hexdims.b; ++y,++i) {
+        for (let x = l; x <= r; ++x) {
+          const key = `${x},${y}`;
+          let color = this.state.hexdata[key];
+          if (color === undefined) color = 'lightgray';
+          hexes.push(<Hexagon key={key} x={x} y={y} color={color}
+            onClick={this.handleClick}></Hexagon>);
+        }
+        if ((i + hexdims.lskew) % 2) --l;
+        if ((i + hexdims.rskew) % 2) --r;
       }
-      if ((i + hexdims.lskew) % 2) --l;
-      if ((i + hexdims.rskew) % 2) --r;
     }
     return (
       <div className='DisplayArea' ref={this.container} onWheel={this.handleWheel}
