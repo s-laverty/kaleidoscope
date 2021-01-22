@@ -2,7 +2,7 @@ import React from 'react';
 
 const hexconst = {
   radius: 50,
-  margin: 8,
+  margin: 7.5,
 }
 hexconst.apothem = hexconst.radius * Math.cos(Math.PI/6);
 hexconst.xdiameter = hexconst.apothem*2 + hexconst.margin;
@@ -16,7 +16,6 @@ class Hexagon extends React.Component {
     let bottomMost = Math.ceil((b - hexconst.radius/2) / hexconst.ydiameter) + 1; // Measured in rows
     let ldiff = leftMost - topMost;
     let rdiff = rightMost - topMost;
-    let xskew = Math.abs(ldiff) % 2;
     return {
       t: topMost,
       b: bottomMost,
@@ -26,15 +25,20 @@ class Hexagon extends React.Component {
       rskew: Math.abs(rdiff+1) % 2
     };
   }
-  constructor(props) {
-    super(props);
-    this.transform = 'translate(-50%, -50%)' +
-      `translate(${props.x*hexconst.xdiameter + props.y*hexconst.xdiameter/2}px,` +
-      `${this.props.y*hexconst.ydiameter}px)`;
+
+  shouldComponentUpdate(newProps) {
+    return this.props.color !== newProps.color;
   }
+
   render() {
+    const transform = 'translate(-50%, -50%)' +
+      `translate(${this.props.x*hexconst.xdiameter +
+      this.props.y*hexconst.xdiameter/2}px,` +
+      `${this.props.y*hexconst.ydiameter}px)`;
     return (
-      <div className='hexagon' style={{transform: this.transform}}></div>
+      <div className='hexagon'
+      style={{transform: transform, backgroundColor: this.props.color}}
+      onClick={() => this.props.onClick(this.props.x, this.props.y)}></div>
     );
   }
 }

@@ -6,7 +6,7 @@
 }
 
 .hexOrigin {
-  position: relative;
+  position: absolute;
   top: calc(50% + 10vh / 2);
   left: 50%;
   width: 0;
@@ -14,10 +14,9 @@
 }
 
 .hexagon {
+  position: absolute;
   height: 100px;
   width: 100px;
-  margin-bottom: -100px;
-  background-color: aqua;
   clip-path: polygon(
     50% 0%, 93.3013% 25%, 93.3013% 75%, 50% 100%, 6.6987% 75%, 6.6987% 25%
   );
