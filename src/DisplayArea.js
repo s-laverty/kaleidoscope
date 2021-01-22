@@ -18,6 +18,15 @@ class DisplayArea extends React.Component {
     this.handleResize = this.handleResize.bind(this);
     this.handleWheel = this.handleWheel.bind(this);
     this.handleClick = this.handleClick.bind(this);
+    this.handleMouseMove = this.handleMouseMove.bind(this);
+    this.handleMouseDown = this.handleMouseDown.bind(this);
+    this.handleMouseUp = this.handleMouseUp.bind(this);
+    this.handleMouseLeave = this.handleMouseLeave.bind(this);
+    this.handleClickCapture = this.handleClickCapture.bind(this);
+    /* Add dragging variables */
+    this.mousedown = false;
+    this.dragging = false;
+    this.dragFrom = null;
   }
 
   handleResize() {
@@ -48,6 +57,39 @@ class DisplayArea extends React.Component {
     });
   }
 
+  handleMouseMove(e) {
+    if (this.mousedown) {
+      this.dragging = true;
+      const dx = e.pageX - this.dragFrom.x;
+      const dy = e.pageY - this.dragFrom.y;
+      this.dragFrom = {x: e.pageX, y: e.pageY};
+      this.setState(state => ({...state,
+        scrollX: state.scrollX - dx,
+        scrollY: state.scrollY - dy
+      }));
+    }
+  }
+
+  handleMouseDown(e) {
+    this.mousedown = true;
+    this.dragFrom = {x: e.pageX, y: e.pageY};
+  }
+
+  handleMouseUp(e) {
+    this.mousedown = false;
+  }
+
+  handleMouseLeave() {
+    this.mousedown = false;
+  }
+
+  handleClickCapture(e) {
+    if (this.dragging) {
+      e.stopPropagation();
+      this.dragging = false;
+    }
+  }
+
   componentDidMount() {
     window.addEventListener('resize', this.handleResize);
     this.handleResize();
@@ -76,9 +118,12 @@ class DisplayArea extends React.Component {
       if ((i + hexdims.rskew) % 2) --r;
     }
     return (
-      <div className='DisplayArea' ref={this.container} onWheel={this.handleWheel}>
+      <div className='DisplayArea' ref={this.container} onWheel={this.handleWheel}
+        onDragStart={e => e.preventDefault()} onMouseMove={this.handleMouseMove}
+        onMouseDown={this.handleMouseDown} onMouseUp={this.handleMouseUp}
+        onMouseLeave={this.handleMouseLeave} onClickCapture={this.handleClickCapture}>
         <div className='hexOrigin'
-          style={{transform: `translate(-${this.state.scrollX}px,-${this.state.scrollY}px)`
+          style={{transform: `translate(${-this.state.scrollX}px,${-this.state.scrollY}px)`
             + `scale(${this.state.scale})`}}>
           {hexes}
         </div>

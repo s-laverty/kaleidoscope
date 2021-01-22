@@ -4,10 +4,6 @@ import DisplayArea from './DisplayArea';
 import MainToolbar from './MainToolbar';
 
 class App extends React.Component {
-  constructor(props) {
-    super(props);
-  }
-  
   render() {
     return (
       <div className="App">
