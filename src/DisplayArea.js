@@ -37,9 +37,13 @@ class DisplayArea extends React.Component {
   }
 
   handleWheel(e) {
-    this.setState(state => ({...state,
-      scale: Math.max(0.2, state.scale + 0.001*e.deltaY)
-    }));
+    this.setState(state => {
+      let newscale = Math.max(0.2, state.scale + 0.001*e.deltaY);
+      let ratio = newscale / state.scale;
+      return {...state, scale: newscale,
+        scrollX: state.scrollX * ratio,
+        scrollY: state.scrollY * ratio};
+    });
   }
 
   handleClick(x,y) {
@@ -101,11 +105,13 @@ class DisplayArea extends React.Component {
 
   render() {
     const hexes = [];
-    const lpx = -this.state.width / 2 / this.state.scale;
-    const tpx = -this.state.height / 2 / this.state.scale;
-    const rpx = -lpx, bpx = -tpx;
-    const hexdims = Hexagon.visibleInBox(tpx,rpx,bpx,lpx);
-    let l = hexdims.l, r = hexdims.r;
+    let t = (-this.state.height / 2 + this.state.scrollY) / this.state.scale;
+    let b = (this.state.height / 2 + this.state.scrollY) / this.state.scale;
+    let l = (-this.state.width / 2 + this.state.scrollX) / this.state.scale;
+    let r = (this.state.width / 2 + this.state.scrollX) / this.state.scale;
+    const hexdims = Hexagon.visibleInBox(t,r,b,l);
+    l = hexdims.l;
+    r = hexdims.r;
     for (let y = hexdims.t, i = 0; y <= hexdims.b; ++y,++i) {
       for (let x = l; x <= r; ++x) {
         const key = `${x},${y}`;

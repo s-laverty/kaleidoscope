@@ -13,7 +13,7 @@ class Hexagon extends React.Component {
     let leftMost = Math.ceil(2*l / hexconst.xdiameter) - 1; // Measured in half hexes
     let rightMost = Math.floor(2*r / hexconst.xdiameter) + 1; // Measured in half hexes
     let topMost = Math.ceil((t + hexconst.radius/2) / hexconst.ydiameter) - 1; // Measured in rows
-    let bottomMost = Math.ceil((b - hexconst.radius/2) / hexconst.ydiameter) + 1; // Measured in rows
+    let bottomMost = Math.floor((b - hexconst.radius/2) / hexconst.ydiameter) + 1; // Measured in rows
     let ldiff = leftMost - topMost;
     let rdiff = rightMost - topMost;
     return {
