@@ -1,4 +1,5 @@
 import React from 'react';
+import './Hexagon.css';
 
 const hexconst = {
   radius: 50,
@@ -36,7 +37,7 @@ class Hexagon extends React.Component {
       this.props.y*hexconst.xdiameter/2}px,` +
       `${this.props.y*hexconst.ydiameter}px)`;
     return (
-      <div className='hexagon'
+      <div className='Hexagon'
       style={{transform: transform, backgroundColor: this.props.color}}
       onClick={() => this.props.onClick(this.props.x, this.props.y)}></div>
     );
