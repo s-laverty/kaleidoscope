@@ -91,7 +91,7 @@ class DisplayArea extends React.Component {
 
   componentDidMount() {
     window.addEventListener('resize', this.handleResize);
-    this.forceUpdate();
+    this.handleResize();
   }
 
   componentWillUnmount() {
