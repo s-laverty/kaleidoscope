@@ -1,6 +1,6 @@
 import React from 'react';
 import './DisplayArea.css';
-import Hexagon from './Hexagon.js';
+import Hexagon from '../Hexagon.js';
 
 class DisplayArea extends React.Component {
   constructor(props) {
