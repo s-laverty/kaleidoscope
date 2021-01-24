@@ -18,7 +18,7 @@ class HexTools extends React.Component {
     return (
       <div className='HexTools'>
         {choices}
-        {/*<button className={erase_className}><span></span><br/>Erase</button>/*}
+        {/*<button className={erase_className}><span></span><br/>Erase</button>*/}
       </div>
     );
   }
