@@ -15,7 +15,6 @@ class DisplayArea extends React.Component {
     /* Bind event handlers */
     this.handleResize = this.handleResize.bind(this);
     this.handleWheel = this.handleWheel.bind(this);
-    this.handleClick = this.handleClick.bind(this);
     this.handleMouseMove = this.handleMouseMove.bind(this);
     this.handleMouseDown = this.handleMouseDown.bind(this);
     this.handleMouseUp = this.handleMouseUp.bind(this);
@@ -38,21 +37,6 @@ class DisplayArea extends React.Component {
       return {...state, scale: newscale,
         scrollX: state.scrollX * ratio,
         scrollY: state.scrollY * ratio};
-    });
-  }
-
-  handleClick(x,y) {
-    const key = `${x},${y}`;
-    this.setState(state => {
-      /* cycle through colors */
-      let color = state.hexdata[key];
-      if (color === 'red') color = 'blue';
-      else if (color === 'blue') color = 'green';
-      else if (color === 'green') color = 'yellow';
-      else if (color === 'yellow') color = 'aqua';
-      else if (color === 'aqua') color = 'fuchsia';
-      else color = 'red';
-      return {...state, hexdata: {...state.hexdata, [key]: color}}
     });
   }
 
@@ -113,10 +97,10 @@ class DisplayArea extends React.Component {
       for (let y = hexdims.t, i = 0; y <= hexdims.b; ++y,++i) {
         for (let x = l; x <= r; ++x) {
           const key = `${x},${y}`;
-          let color = this.state.hexdata[key];
+          let color = this.props.hexdata[key];
           if (color === undefined) color = 'lightgray';
           hexes.push(<Hexagon key={key} x={x} y={y} color={color}
-            onClick={this.handleClick}></Hexagon>);
+            onClick={this.props.handleHexClick}></Hexagon>);
         }
         if ((i + hexdims.lskew) % 2) --l;
         if ((i + hexdims.rskew) % 2) --r;
