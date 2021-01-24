@@ -7,32 +7,39 @@ class App extends React.Component {
   constructor() {
     super();
     this.state = {
-      hexdata: {}
-    }
+      hexdata: {},
+      colorchoices: ['#ff0000','#00ff00','#0000ff'],
+      selectedcolorindex: null,
+    };
     this.handleHexClick = this.handleHexClick.bind(this);
+    this.handleColorChoiceClick = this.handleColorChoiceClick.bind(this);
   }
   handleHexClick(x,y) {
     const key = `${x},${y}`;
     this.setState(state => {
-      /* cycle through colors */
-      let color = state.hexdata[key];
-      if (color === 'red') color = 'blue';
-      else if (color === 'blue') color = 'green';
-      else if (color === 'green') color = 'yellow';
-      else if (color === 'yellow') color = 'aqua';
-      else if (color === 'aqua') color = 'fuchsia';
-      else color = 'red';
-      return {...state, hexdata: {...state.hexdata, [key]: color}}
+      if (this.selectedcolorindex === null) return;
+      return {...state, hexdata: {...state.hexdata, [key]:
+        this.state.colorchoices[this.state.selectedcolorindex]}};
     });
+  }
+  handleColorChoiceClick(i) {
+    this.setState({...this.state, selectedcolorindex: i});
   }
   render() {
     const DisplayArea_props = {
-      hexdata: this.state.hexdata, handleHexClick: this.handleHexClick
+      hexdata: this.state.hexdata,
+      handleHexClick: this.handleHexClick
     };
+    const MainToolbar_props = {
+      colorchoices: this.state.colorchoices,
+      selectedcolorindex: this.state.selectedcolorindex,
+      handleColorChoiceClick: this.handleColorChoiceClick
+    };
+    console.log(MainToolbar_props);
     return (
       <div className="App">
         <DisplayArea {...DisplayArea_props}></DisplayArea>
-        <MainToolbar></MainToolbar>
+        <MainToolbar {...MainToolbar_props}></MainToolbar>
       </div>
     );
   }

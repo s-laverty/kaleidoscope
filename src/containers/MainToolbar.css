@@ -5,6 +5,15 @@
   flex-direction: row;
   justify-content: center;
   align-items: center;
-  font-size: 2em;
+  font-size: 1em;
   color: white;
+}
+
+.MainToolbar > * {
+  margin: 0.2em;
+}
+
+.MainToolbar > span.title {
+  font-size: 2em;
+  margin-right: 3em;
 }
