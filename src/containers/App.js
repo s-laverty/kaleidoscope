@@ -7,23 +7,50 @@ class App extends React.Component {
   constructor() {
     super();
     this.state = {
-      hexdata: {},
-      colorchoices: ['#ff0000','#00ff00','#0000ff'],
-      selectedcolorindex: null,
+      toolbar: {
+        selected_tool: null,
+        colors: ['#ff0000','#00ff00','#0000ff'],
+        selected_color_index: null
+      },
+      hexdata: {}
     };
     this.handleHexClick = this.handleHexClick.bind(this);
-    this.handleColorChoiceClick = this.handleColorChoiceClick.bind(this);
+    this.handleToolbarClick = this.handleToolbarClick.bind(this);
   }
   handleHexClick(x,y) {
     const key = `${x},${y}`;
-    this.setState(state => {
-      if (this.selectedcolorindex === null) return;
-      return {...state, hexdata: {...state.hexdata, [key]:
-        this.state.colorchoices[this.state.selectedcolorindex]}};
-    });
+    switch (this.state.toolbar.selected_tool) {
+      case 'fill':
+        this.setState(state => {
+          return {...state, hexdata: {...state.hexdata, [key]:
+            this.state.toolbar.colors[this.state.toolbar.selected_color_index]}};
+        });
+        break;
+      case 'erase':
+        this.setState(state => {
+          return {...state, hexdata: {...state.hexdata, [key]: undefined}};
+        });
+        break;
+      default: return;
+    }
   }
-  handleColorChoiceClick(i) {
-    this.setState({...this.state, selectedcolorindex: i});
+  handleToolbarClick(type, ...args) {
+    this.setState(state => {
+      switch (type) {
+        case 'color':
+          return ({...state, toolbar:
+            {...state.toolbar,
+              selected_tool: 'fill',
+              selected_color_index: args[0]}});
+        case 'erase':
+          return ({...state, toolbar:
+            {...state.toolbar,
+              selected_tool: 'erase',
+              selected_color_index: null}});
+        default:
+          return state;
+      }
+    });
   }
   render() {
     const DisplayArea_props = {
@@ -31,11 +58,9 @@ class App extends React.Component {
       handleHexClick: this.handleHexClick
     };
     const MainToolbar_props = {
-      colorchoices: this.state.colorchoices,
-      selectedcolorindex: this.state.selectedcolorindex,
-      handleColorChoiceClick: this.handleColorChoiceClick
+      ...this.state.toolbar,
+      handleToolbarClick: this.handleToolbarClick
     };
-    console.log(MainToolbar_props);
     return (
       <div className="App">
         <DisplayArea {...DisplayArea_props}></DisplayArea>

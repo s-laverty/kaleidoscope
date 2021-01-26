@@ -6,9 +6,10 @@ class MainToolbar extends React.Component {
   
   render() {
     const HexTools_props = {
-      colorchoices: this.props.colorchoices,
-      selectedcolorindex: this.props.selectedcolorindex,
-      handleColorChoiceClick: this.props.handleColorChoiceClick
+      selected_tool: this.props.selected_tool,
+      colors: this.props.colors,
+      selected_color_index: this.props.selected_color_index,
+      handleToolbarClick: this.props.handleToolbarClick
     }
     return <div className='MainToolbar'>
       <span className='title'>Kaleidoscope</span>

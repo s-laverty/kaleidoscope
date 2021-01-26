@@ -1,30 +1,49 @@
 .HexTools {
+  flex-grow: 1;
   display: flex;
   flex-direction: row;
+  justify-content: center;
 }
 .HexTools > button {
+  min-width: 4.5rem;
   text-align: center;
-  margin: .125em .5em;
-  padding: .2em .2em 0;
+  margin: .125rem .5rem;
+  padding: .2rem .2rem 0;
   border: none;
+  outline: none;
   background-color: transparent;
   color: inherit;
   font-size: inherit;
 }
+.HexTools > button:hover {
+  outline: .125rem solid rgba(255,255,255,.1);
+  background-color: rgba(255,255,255,.05);
+}
 .HexTools > button.selected {
-  margin: 0 .375em;
-  border: .125em solid rgba(255,255,255,.2);
+  outline: .125rem solid rgba(255,255,255,.2);
   background-color: rgba(255,255,255,.1);
 }
-.HexTools > button > span {
+.HexTools > button > span.icon {
   display: inline-block;
-  height: 1.8em;
-  width: 1.8em;
+  height: 2.2rem;
+  width: 2.2rem;
 }
-.ColorChoice > span {
+.HexTools > button.color-choice > span.icon {
+  height: 1.8rem;
+  width: 1.8rem;
+  border: .2rem solid white;
+}
+.HexTools > button.erase > span.icon {
   display: inline-block;
-  background-color: yellowgreen;
-  border: .2em solid white;
-  height: 1.8em;
-  width: 1.8em;
+  background-color: white;
+  background-image: url('../assets/red-x.svg');
+  background-size: contain;
+}
+.HexTools > button.color-picker > input[type='color'] {
+  display: none;
+}
+.HexTools > button[disabled] {
+  opacity: 0.5;
+  background-color: transparent;
+  outline: none;
 }
