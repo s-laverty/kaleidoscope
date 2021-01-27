@@ -9,7 +9,7 @@ class MainToolbar extends React.Component {
       selected_tool: this.props.selected_tool,
       colors: this.props.colors,
       selected_color_index: this.props.selected_color_index,
-      color_picker_value: this.color_picker_value,
+      color_picker_value: this.props.color_picker_value,
       handleToolbar: this.props.handleToolbar
     }
     return <div className='MainToolbar'>

@@ -5,9 +5,17 @@ class HexTools extends React.Component {
   constructor(props) {
     super(props);
     this.color_picker_input = React.createRef();
+    this.will_pick_color = false;
+    this.handleChangeColor = this.handleChangeColor.bind(this);
+    this.handleAddColor = this.handleAddColor.bind(this);
   }
   handleAddColor() {
-
+    this.props.handleToolbar('new-color');
+    this.will_pick_color = true;
+  }
+  handleChangeColor() {
+    this.props.handleToolbar('color-picker', this.props.colors[this.props.selected_color_index]);
+    this.will_pick_color = true;
   }
   render() {
     const choices = [];
@@ -26,16 +34,18 @@ class HexTools extends React.Component {
     return (
       <div className='HexTools'>
         {choices}
-        <button className={'add-color'}><span className='icon'></span><br/>Add Color</button>
+        <button className={'add-color'}
+        onClick={this.handleAddColor}><span className='icon'></span><br/>Add Color</button>
         <button className={'color-picker'}
         disabled={color_picker_disabled}
-        onClick={() => this.color_picker_input.current.click()}>
+        onClick={this.handleChangeColor}>
           <input type='color' ref={this.color_picker_input}
           value={this.props.color_picker_value}
+          onClick={e => e.stopPropagation()}
           onChange={e => this.props.handleToolbar('color-picker', e.target.value)}
-          disabled={this.props.selected_tool !== 'fill'}/>
+          disabled={color_picker_disabled}/>
           <span className='icon border'></span><br/>
-          Pick Color
+          Change Color
         </button>
         <button className={erase_className}
           onClick={() => this.props.handleToolbar('erase')}>
@@ -43,6 +53,13 @@ class HexTools extends React.Component {
         </button>
       </div>
     );
+  }
+  componentDidUpdate() {
+    if (this.will_pick_color) {
+      this.will_pick_color = false;
+      this.color_picker_input.current.click();
+      return;
+    }
   }
 }
 
