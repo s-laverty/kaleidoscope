@@ -1,0 +1,8 @@
+.Hexagon {
+  position: absolute;
+  height: 100px;
+  width: 100px;
+  clip-path: polygon(
+    50% 0%, 93.3013% 25%, 93.3013% 75%, 50% 100%, 6.6987% 75%, 6.6987% 25%
+  );
+}

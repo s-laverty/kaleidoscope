@@ -1,0 +1,19 @@
+.MainToolbar {
+  order: 1;
+  background-color: rgb(49, 49, 51);
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  font-size: 1rem;
+  color: white;
+  overflow-x: auto;
+}
+
+.MainToolbar > * {
+  margin: 0.2rem;
+}
+
+.MainToolbar > span.title {
+  font-size: 2rem;
+  padding: 0 2rem;
+}

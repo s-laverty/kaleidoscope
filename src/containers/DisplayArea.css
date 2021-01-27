@@ -1,0 +1,13 @@
+.DisplayArea {
+  order: 2;
+  flex-grow: 1;
+  overflow: hidden;
+}
+
+.hexOrigin {
+  position: relative;
+  top: 50%;
+  left: 50%;
+  height: 0;
+  width: 0;
+}
