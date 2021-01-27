@@ -5,21 +5,18 @@ class HexTools extends React.Component {
   constructor(props) {
     super(props);
     this.color_picker_input = React.createRef();
-    this.handleColorPicker = this.handleColorPicker.bind(this);
   }
+  handleAddColor() {
 
-  handleColorPicker(e) {
-    console.log(e);
   }
-
   render() {
     const choices = [];
       for (let i = 0; i < this.props.colors.length; ++i) {
         let className = 'color-choice';
         if (this.props.selected_color_index === i) className += ' selected';
         choices.push(<button key={i} className={className}
-          onClick={() => this.props.handleToolbarClick('color', i)}>
-          <span className='icon' style={{backgroundColor: this.props.colors[i]}}></span><br/>
+          onClick={() => this.props.handleToolbar('color', i)}>
+          <span className='icon border' style={{backgroundColor: this.props.colors[i]}}></span><br/>
           Color #{i+1}
         </button>);
       }
@@ -29,17 +26,19 @@ class HexTools extends React.Component {
     return (
       <div className='HexTools'>
         {choices}
+        <button className={'add-color'}><span className='icon'></span><br/>Add Color</button>
         <button className={'color-picker'}
         disabled={color_picker_disabled}
         onClick={() => this.color_picker_input.current.click()}>
           <input type='color' ref={this.color_picker_input}
-          onInput={this.handleColorPicker}
+          value={this.props.color_picker_value}
+          onChange={e => this.props.handleToolbar('color-picker', e.target.value)}
           disabled={this.props.selected_tool !== 'fill'}/>
-          <span className='icon'></span><br/>
+          <span className='icon border'></span><br/>
           Pick Color
         </button>
         <button className={erase_className}
-          onClick={() => this.props.handleToolbarClick('erase')}>
+          onClick={() => this.props.handleToolbar('erase')}>
             <span className='icon'></span><br/>Erase
         </button>
       </div>

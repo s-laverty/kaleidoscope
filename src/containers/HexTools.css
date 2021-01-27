@@ -27,17 +27,22 @@
   display: inline-block;
   height: 2.2rem;
   width: 2.2rem;
+  background-color: white;
 }
-.HexTools > button.color-choice > span.icon {
+.HexTools > button > span.icon.border {
   height: 1.8rem;
   width: 1.8rem;
   border: .2rem solid white;
 }
 .HexTools > button.erase > span.icon {
-  display: inline-block;
-  background-color: white;
   background-image: url('../assets/red-x.svg');
-  background-size: contain;
+  background-size: cover;
+  background-repeat: no-repeat;
+}
+.HexTools > button.color-picker > span.icon {
+  background-image: url('../assets/color-picker-icon.svg');
+  background-size: cover;
+  background-repeat: no-repeat;
 }
 .HexTools > button.color-picker > input[type='color'] {
   display: none;

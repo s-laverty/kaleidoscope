@@ -10,12 +10,13 @@ class App extends React.Component {
       toolbar: {
         selected_tool: null,
         colors: ['#ff0000','#00ff00','#0000ff'],
-        selected_color_index: null
+        selected_color_index: null,
+        color_picker_value: ''
       },
       hexdata: {}
     };
     this.handleHexClick = this.handleHexClick.bind(this);
-    this.handleToolbarClick = this.handleToolbarClick.bind(this);
+    this.handleToolbar = this.handleToolbar.bind(this);
   }
   handleHexClick(x,y) {
     const key = `${x},${y}`;
@@ -34,19 +35,32 @@ class App extends React.Component {
       default: return;
     }
   }
-  handleToolbarClick(type, ...args) {
+  handleToolbar(type, ...args) {
     this.setState(state => {
       switch (type) {
         case 'color':
           return ({...state, toolbar:
             {...state.toolbar,
               selected_tool: 'fill',
-              selected_color_index: args[0]}});
+              selected_color_index: args[0]
+            }
+          });
+        case 'color-picker':
+          const new_colors = state.toolbar.colors.slice();
+          new_colors[state.toolbar.selected_color_index] = args[0];
+          return ({...state, toolbar:
+            {...state.toolbar,
+              colors: new_colors,
+              color_picker_value: args[0]
+            }
+          });
         case 'erase':
           return ({...state, toolbar:
             {...state.toolbar,
               selected_tool: 'erase',
-              selected_color_index: null}});
+              selected_color_index: null
+            }
+          });
         default:
           return state;
       }
@@ -59,7 +73,7 @@ class App extends React.Component {
     };
     const MainToolbar_props = {
       ...this.state.toolbar,
-      handleToolbarClick: this.handleToolbarClick
+      handleToolbar: this.handleToolbar
     };
     return (
       <div className="App">
