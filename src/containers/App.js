@@ -1,18 +1,17 @@
 import React from 'react'
 import './App.css';
 import DisplayArea from './DisplayArea';
-import MainToolbar from './MainToolbar';
+import ToolsMenu from './ToolsMenu';
 
 class App extends React.Component {
   constructor() {
     super();
     this.state = {
-      toolbar: {
-        selected_tool: null,
-        colors: ['#ff0000','#00ff00','#0000ff'],
-        selected_color_index: null,
-        color_picker_value: ''
-      },
+      selected_tool: null,
+      colors: ['#ff0000','#00ff00','#0000ff'],
+      selected_color_index: null,
+      color_picker_value: '',
+      will_pick_color: false,
       hexdata: {}
     };
     this.handleHexClick = this.handleHexClick.bind(this);
@@ -20,82 +19,111 @@ class App extends React.Component {
   }
   handleHexClick(x,y) {
     const key = `${x},${y}`;
-    switch (this.state.toolbar.selected_tool) {
+    switch (this.state.selected_tool) {
       case 'fill':
-        this.setState(state => {
-          return {...state, hexdata: {...state.hexdata, [key]:
-            this.state.toolbar.colors[this.state.toolbar.selected_color_index]}};
-        });
+      case 'change-color':
+        this.setState(state => ({
+          selected_tool: 'fill',
+          hexdata: {...state.hexdata,
+            [key]: state.colors[state.selected_color_index]
+          }
+        }));
         break;
       case 'erase':
-        this.setState(state => {
-          return {...state, hexdata: {...state.hexdata, [key]: undefined}};
-        });
+        this.setState(state => ({
+          hexdata: {...state.hexdata,
+            [key]: undefined
+          }
+        }));
         break;
       default: return;
     }
   }
   handleToolbar(type, ...args) {
-    let new_colors;
     switch (type) {
       case 'color':
-        this.setState({...this.state, toolbar:
-          {...this.state.toolbar,
-            selected_tool: 'fill',
-            selected_color_index: args[0]
-          }
+        this.setState({
+          selected_tool: 'fill',
+          selected_color_index: args[0]
         });
         break;
-      case 'new-color':
-        let new_color = `#${Math.floor(Math.random()*(1<<(8*3))).toString(16)}`;
-        let l = this.state.toolbar.colors.length;
-        new_colors = this.state.toolbar.colors.slice();
-        new_colors.push(new_color);
-        this.setState({...this.state, toolbar:
-          {...this.state.toolbar,
-            selected_tool: 'fill',
+      case 'add-color':
+        this.setState(state => {
+          let new_color = `#${Math.floor(Math.random()*(1<<(8*3))).toString(16).padStart(6,'0')}`;
+          let l = state.colors.length;
+          let new_colors = state.colors.slice();
+          new_colors.push(new_color);
+          return {
+            selected_tool: 'change-color',
             colors: new_colors,
             selected_color_index: l,
-            color_picker_value: new_color
-          }
+            color_picker_value: new_color,
+            will_pick_color: true
+          };
         });
         break;
-      case 'color-picker':
-        new_colors = this.state.toolbar.colors.slice();
-        new_colors[this.state.toolbar.selected_color_index] = args[0];
-        this.setState({...this.state, toolbar:
-          {...this.state.toolbar,
+      case 'change-color-click':
+        this.setState(state => ({
+          selected_tool: 'change-color',
+          color_picker_value: state.colors[state.selected_color_index],
+          will_pick_color: true
+        }));
+        break;
+      case 'change-color':
+        this.setState(state => {
+          const new_colors = state.colors.slice();
+          new_colors[state.selected_color_index] = args[0];
+          return {
             colors: new_colors,
             color_picker_value: args[0]
+          };
+        });
+        break;
+      case 'change-color-close':
+        this.setState({selected_tool: 'fill'});
+        break;
+      case 'remove-color':
+        this.setState(state => {
+          const new_colors = state.colors.slice(0,state.selected_color_index).concat(
+            state.colors.slice(state.selected_color_index+1));
+          return {
+            selected_tool: null,
+            colors: new_colors,
+            selected_color_index: null
           }
         });
         break;
       case 'erase':
-        this.setState({...this.state, toolbar:
-          {...this.state.toolbar,
-            selected_tool: 'erase',
-            selected_color_index: null
-          }
+        this.setState({
+          selected_tool: 'erase',
+          selected_color_index: null
         });
         break;
       default: break;
     }
   }
   render() {
-    const DisplayArea_props = {
-      hexdata: this.state.hexdata,
-      handleHexClick: this.handleHexClick
-    };
-    const MainToolbar_props = {
-      ...this.state.toolbar,
-      handleToolbar: this.handleToolbar
-    };
     return (
       <div className="App">
-        <DisplayArea {...DisplayArea_props}></DisplayArea>
-        <MainToolbar {...MainToolbar_props}></MainToolbar>
+        <DisplayArea
+          hexdata={this.state.hexdata}
+          handleHexClick={this.handleHexClick}
+        />
+        <ToolsMenu
+          selected_tool={this.state.selected_tool}
+          colors={this.state.colors}
+          selected_color_index={this.state.selected_color_index}
+          color_picker_value={this.state.color_picker_value}
+          will_pick_color={this.state.will_pick_color}
+          handleToolbar={this.handleToolbar}
+        />
       </div>
     );
+  }
+  componentDidUpdate() {
+    if (this.state.will_pick_color) {
+      this.setState({will_pick_color: false});
+    }
   }
 }
 

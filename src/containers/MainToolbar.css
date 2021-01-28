@@ -1,19 +1,41 @@
-.MainToolbar {
-  order: 1;
-  background-color: rgb(49, 49, 51);
+.MainToolbar .toolbar {
   display: flex;
   flex-direction: row;
   align-items: center;
-  font-size: 1rem;
-  color: white;
   overflow-x: auto;
 }
-
-.MainToolbar > * {
-  margin: 0.2rem;
-}
-
-.MainToolbar > span.title {
+.MainToolbar span.title {
   font-size: 2rem;
   padding: 0 2rem;
+}
+.MainToolbar .tools-wrapper {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  padding: .2rem 0;
+}
+.MainToolbar button.tool {
+  margin-left: 0.325rem;
+  margin-right: 0.325rem;
+}
+.MainToolbar button.add-color > span.icon {
+  background-color: transparent;
+  background-image: url('../assets/white-plus.svg');
+  background-size: cover;
+  background-repeat: no-repeat;
+}
+.MainToolbar button.color-picker > span.icon {
+  background-image: url('../assets/color-picker-icon.svg');
+  background-size: cover;
+  background-repeat: no-repeat;
+}
+.MainToolbar button.color-picker > input[type='color'] {
+  display: none;
+}
+.MainToolbar button.erase > span.icon {
+  background-image: url('../assets/red-x.svg');
+  background-size: 90%;
+  background-position: center;
+  background-repeat: no-repeat;
 }

@@ -1,0 +1,66 @@
+.OptionsTray {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  transition: transform .75s;
+}
+.OptionsTray.collapsed {
+  transform: translate(100%,0);
+}
+.OptionsTray.hidden {
+  display: none;
+}
+.OptionsTray .toolbar {
+  border-top: .025rem solid rgba(255,255,255,.4);
+}
+.OptionsTray .tray {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.OptionsTray span.title {
+  font-size: 1.25rem;
+  padding: 0.2rem 0.5rem 0.5rem;
+}
+.OptionsTray .tool-wrapper {
+  padding: 0 .2rem;
+  display: flex;
+  flex-direction: column;
+}
+.OptionsTray button.tool {
+  width: 4.5rem;
+  margin-top: 0.325rem;
+  margin-bottom: 0.325rem;
+}
+.OptionsTray button.change-color > span.icon {
+  background-image: url('../assets/color-picker-icon.svg');
+  background-size: cover;
+  background-repeat: no-repeat;
+}
+.OptionsTray button.change-color > input[type=color] {
+  display: none;
+}
+.OptionsTray button.remove-color > span.icon {
+  background-image: url('../assets/red-x.svg');
+  background-size: 90%;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+.OptionsTray .collapse-popout {
+  position: absolute;
+  top: 0;
+  right: 100%;
+  border-right: .0125rem solid rgba(255,255,255,.2);
+}
+.OptionsTray button.collapse > span.icon {
+  display: inline-block;
+  width: 1.5rem;
+  height: 1.5rem;
+  background-image: url('../assets/white-chevron.svg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+.OptionsTray.collapsed button.collapse > span.icon {
+  transform: scaleX(-1);
+}

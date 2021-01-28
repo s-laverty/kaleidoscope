@@ -1,21 +1,39 @@
 import React from 'react';
 import './MainToolbar.css';
-import HexTools from './HexTools.js';
 
 class MainToolbar extends React.Component {
-  
   render() {
-    const HexTools_props = {
-      selected_tool: this.props.selected_tool,
-      colors: this.props.colors,
-      selected_color_index: this.props.selected_color_index,
-      color_picker_value: this.props.color_picker_value,
-      handleToolbar: this.props.handleToolbar
-    }
-    return <div className='MainToolbar'>
-      <span className='title'>Kaleidoscope</span>
-      <HexTools {...HexTools_props}></HexTools>
-    </div>
+    const colors = [];
+      for (let i = 0; i < this.props.colors.length; ++i) {
+        let className = 'color-choice tool';
+        if (this.props.selected_color_index === i) className += ' selected';
+        colors.push(<button key={i} className={className}
+          onClick={() => this.props.handleToolbar('color', i)}>
+          <span className='icon border' style={{backgroundColor: this.props.colors[i]}}></span><br/>
+          Color #{i+1}
+        </button>);
+      }
+    let erase_className = 'erase tool';
+    if (this.props.selected_tool === 'erase') erase_className += ' selected';
+    const color_picker_disabled = this.props.selected_tool !== 'fill';
+    return (
+      <div className='MainToolbar'>
+        <div className='toolbar'>
+          <span className='title'>Kaleidoscope</span>
+          <div className='tools-wrapper'>
+            {colors}
+            <button className={'add-color tool'}
+            onClick={() => this.props.handleToolbar('add-color')}>
+              <span className='icon'></span><br/>Add Color
+            </button>
+            <button className={erase_className}
+            onClick={() => this.props.handleToolbar('erase')}>
+              <span className='icon'></span><br/>Erase
+            </button>
+          </div>
+       </div>
+      </div>
+    );
   }
 }
 
