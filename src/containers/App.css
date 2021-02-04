@@ -1,7 +1,19 @@
 .App {
+  --toolbar-background: rgb(49, 49, 51);
+  --hex-grid-background: white;
   position: static;
   width: 100vw;
   height: 100vh;
   display: flex;
   flex-direction: column;
+}
+
+.App > .DisplayArea {
+  order: 2;
+  flex-grow: 1;
+}
+
+.App > .MainToolbar {
+  order: 1;
+  z-index: 1;
 }

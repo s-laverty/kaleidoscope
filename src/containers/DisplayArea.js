@@ -32,7 +32,7 @@ class DisplayArea extends React.Component {
 
   handleWheel(e) {
     this.setState(state => {
-      let newscale = Math.max(0.2, state.scale + 0.001*e.deltaY);
+      let newscale = Math.max(0.2, state.scale - 0.005*e.deltaY);
       let ratio = newscale / state.scale;
       return {...state, scale: newscale,
         scrollX: state.scrollX * ratio,
@@ -107,7 +107,7 @@ class DisplayArea extends React.Component {
       }
     }
     return (
-      <div className='DisplayArea' ref={this.container} onWheel={this.handleWheel}
+      <div className='DisplayArea flex-center' ref={this.container} onWheel={this.handleWheel}
         onDragStart={e => e.preventDefault()} onMouseMove={this.handleMouseMove}
         onMouseDown={this.handleMouseDown} onMouseUp={this.handleMouseUp}
         onMouseLeave={this.handleMouseLeave} onClickCapture={this.handleClickCapture}>

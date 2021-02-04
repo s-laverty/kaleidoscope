@@ -1,0 +1,86 @@
+.ToolbarDropdown {
+  --transition-length: 0.5s;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--toolbar-background);
+}
+.ToolbarDropdown > * {
+  flex-shrink: 0;
+}
+.ToolbarDropdown > .ToolbarButton:first-child {
+  font-size: 1.3rem;
+  height: 100%;
+}
+.ToolbarDropdown span.dropdown-icon {
+  display: inline-block;
+  vertical-align: sub;
+  margin-left: .3em;
+  width: 1em;
+  height: 1em;
+  transition: transform var(--transition-length);
+}
+.ToolbarDropdown.collapsed span.dropdown-icon {
+  transform: scaleY(-1);
+}
+.ToolbarDropdown span.dropdown-icon::before {
+  content: '';
+  display: block;
+  width: 100%;
+  height: 100%;
+  background-image: url('assets/white-chevron.svg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  transform: rotateZ(-90deg);
+}
+.ToolbarDropdown > .drop-list-separator {
+  margin: 0;
+  border: none;
+  background-color: var(--toolbar-background);
+  border-top: .05rem solid rgba(255,255,255,.5);
+  transition: opacity var(--transition-length);
+}
+.ToolbarDropdown > .drop-list {
+  z-index: -1;
+  box-shadow: 0 0 .2rem black;
+  padding: 0.1rem 0.2rem;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--toolbar-background);
+  transition: transform var(--transition-length), opacity var(--transition-length)
+}
+.ToolbarDropdown > .drop-list > .ToolbarButton {
+  margin: .1rem 0;
+}
+.ToolbarDropdown.collapsed > .drop-list-separator {
+  opacity: 0;
+}
+.ToolbarDropdown.collapsed > .drop-list {
+  transform: translateY(-5rem);
+  opacity: 0;
+}
+.ToolbarDropdown.hidden > .drop-list-separator {
+  visibility: hidden;
+}
+.ToolbarDropdown.hidden > .drop-list {
+  visibility: hidden;
+}
+.ToolbarDropdown.disabled > .drop-list-separator {
+  transition: none;
+  visibility: hidden;
+}
+.ToolbarDropdown.disabled > .drop-list {
+  transition: none;
+  visibility: hidden;
+}
+.ToolbarDropdown.force-open > .drop-list-separator {
+  transition: none;
+  opacity: initial;
+  visibility: initial;
+}
+.ToolbarDropdown.force-open > .drop-list {
+  transition: none;
+  opacity: initial;
+  transform: initial;
+  visibility: initial;
+}

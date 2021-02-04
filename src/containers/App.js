@@ -1,7 +1,7 @@
 import React from 'react'
 import './App.css';
 import DisplayArea from './DisplayArea';
-import ToolsMenu from './ToolsMenu';
+import MainToolbar from './MainToolbar';
 
 class App extends React.Component {
   constructor() {
@@ -41,6 +41,26 @@ class App extends React.Component {
   }
   handleToolbar(type, ...args) {
     switch (type) {
+      case 'load':
+        let saved_hexdata = JSON.parse(localStorage.getItem('hexdata'));
+        let saved_colors = JSON.parse(localStorage.getItem('colors'));
+        if (!saved_hexdata || !saved_colors) {
+          alert('It appears there is no save data on this computer!');
+          break;
+        }
+        if (window.confirm('Are you sure you want to overwrite your current project?')) {
+          this.setState({
+            hexdata: saved_hexdata,
+            colors: saved_colors,
+            selected_tool: null,
+            selected_color_index: null
+          });
+        }
+        break;
+      case 'save':
+        localStorage.setItem('hexdata', JSON.stringify(this.state.hexdata));
+        localStorage.setItem('colors', JSON.stringify(this.state.colors));
+        break;
       case 'color':
         this.setState({
           selected_tool: 'fill',
@@ -109,7 +129,7 @@ class App extends React.Component {
           hexdata={this.state.hexdata}
           handleHexClick={this.handleHexClick}
         />
-        <ToolsMenu
+        <MainToolbar
           selected_tool={this.state.selected_tool}
           colors={this.state.colors}
           selected_color_index={this.state.selected_color_index}

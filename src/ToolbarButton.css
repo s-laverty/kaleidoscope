@@ -1,0 +1,38 @@
+.ToolbarButton {
+  --border-thickness: .125rem;
+  padding: .2rem;
+  border: var(--border-thickness) solid transparent;
+  outline: none;
+  background-color: transparent;
+  font-size: inherit;
+  color: white;
+  text-align: center;
+}
+.ToolbarButton:hover {
+  border: var(--border-thickness) solid rgba(255,255,255,.1);
+  background-color: rgba(255,255,255,.05);
+}
+.ToolbarButton:active {
+  border: var(--border-thickness) solid rgba(255,255,255,.15);
+  background-color: rgba(255,255,255,.075);
+}
+.ToolbarButton.selected {
+  border: var(--border-thickness) solid rgba(255,255,255,.2);
+  background-color: rgba(255,255,255,.1);
+}
+.ToolbarButton[disabled] {
+  border: var(--border-thickness) solid transparent;
+  background-color: transparent;
+  opacity: 0.5;
+}
+
+.ToolbarButton > .icon {
+  height: 2rem;
+  width: 2rem;
+}
+.ToolbarButton > span.icon {
+  display: inline-block;
+}
+.ToolbarButton > .icon.border {
+  border: .2rem solid white;
+}
