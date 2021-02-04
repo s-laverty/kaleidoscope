@@ -1,97 +1,53 @@
-import React from 'react';
 import './MainToolbar.css';
-import ToolbarDropdown from '../ToolbarDropdown';
+import FileDropdown from './FileDropdown';
+import OptionsDropdown from './OptionsDropdown';
 import ToolbarButton from '../ToolbarButton';
+import Modal from '../Modal';
 import WhitePlus from '../assets/white-plus.svg';
 import RedX from '../assets/red-x.svg';
-import ColorPickerIcon from '../assets/color-picker-icon.svg';
 
-class MainToolbar extends React.Component {
-  constructor(props) {
-    super(props)
-    this.color_picker_input = React.createRef();
+function MainToolbar(props) {
+  const colors = [];
+  for (let i = 0; i < props.colors.length; ++i) {
+    colors.push(<ToolbarButton key={i}
+    onClick={() => props.handleToolbar('color', i)}
+    selected={props.selected_color_index === i}
+    text={`Color #${i+1}`}
+    icon={{
+      border: true,
+      style: {backgroundColor: props.colors[i]}
+    }}/>);
   }
-
-  render() {
-    const colors = [];
-      for (let i = 0; i < this.props.colors.length; ++i) {
-        colors.push(<ToolbarButton key={i}
-        onClick={() => this.props.handleToolbar('color', i)}
-        selected={this.props.selected_color_index === i}
-        text={`Color #${i+1}`}
-        icon={{
-          border: true,
-          style: {backgroundColor: this.props.colors[i]}
-        }}/>);
-      }
-    return (
-      <div className='MainToolbar'>
-        <span className='title flex-center'>Kaleidoscope</span>
-        <ToolbarDropdown
-        name='File'
-        buttons={[
-          <ToolbarButton key={'load'}
-          text='Load'
-          onClick={() => this.props.handleToolbar('load')}
-          />,
-          <ToolbarButton key={'save'}
-          text='Save'
-          onClick={() => this.props.handleToolbar('save')}
-          />
-        ]}
+  return (
+    <div className='MainToolbar'>
+      <span className='title flex-center'>Kaleidoscope</span>
+      <FileDropdown
+      file_operation={props.file_operation}
+      handleToolbar={props.handleToolbar}/>
+      <OptionsDropdown
+      selected_tool={props.selected_tool}
+      color_picker_value={props.color_picker_value}
+      will_pick_color={props.will_pick_color}
+      handleToolbar={props.handleToolbar}/>
+      <div className='tools-wrapper'>
+        {colors}
+        <ToolbarButton
+        text='Add Color'
+        icon={{src: WhitePlus}}
+        onClick={() => props.handleToolbar('add-color')}
         />
-        <ToolbarDropdown
-        name='Options'
-        disabled={!['fill','change-color'].includes(this.props.selected_tool)}
-        force_open={this.props.selected_tool === 'change-color'}
-        buttons={[
-          <ToolbarButton key={'change-color'}
-          text='Change Color'
-          icon={{border: true, src: ColorPickerIcon}}
-          custom={
-            <input type='color' ref={this.color_picker_input}
-            value={this.props.color_picker_value}
-            onClick={e => e.stopPropagation()}
-            onChange={e => this.props.handleToolbar('change-color', e.target.value)}/>
-          }
-          selected={this.props.selected_tool === 'change-color'}
-          onClick={() => this.props.handleToolbar('change-color-click')}
-          />,
-          <ToolbarButton
-          text='Remove Color'
-          icon={{
-            src: RedX,
-            style: {backgroundColor: 'white'}
-          }}
-          onClick={() => this.props.handleToolbar('remove-color')}/>
-        ]}/>
-        <div className='tools-wrapper'>
-          {colors}
-          <ToolbarButton
-          text='Add Color'
-          icon={{src: WhitePlus}}
-          onClick={() => this.props.handleToolbar('add-color')}
-          />
-          <ToolbarButton
-          text='Erase'
-          icon={{
-            src: RedX,
-            style: {backgroundColor: 'white'}
-          }}
-          selected={this.props.selected_tool === 'erase'}
-          onClick={() => this.props.handleToolbar('erase')}
-          />
-        </div>
+        <ToolbarButton
+        text='Erase'
+        icon={{
+          src: RedX,
+          style: {backgroundColor: 'white'}
+        }}
+        selected={props.selected_tool === 'erase'}
+        onClick={() => props.handleToolbar('erase')}
+        />
       </div>
-    );
-  }
-  componentDidUpdate(oldProps, oldState) {
-    if (this.props.will_pick_color) {
-      this.color_picker_input.current.onchange =
-        () => this.props.handleToolbar('change-color-close');
-      this.color_picker_input.current.click();
-    }
-  }
+    </div>
+  );
 }
 
 export default MainToolbar;

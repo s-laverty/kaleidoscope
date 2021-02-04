@@ -7,12 +7,13 @@ class App extends React.Component {
   constructor() {
     super();
     this.state = {
+      hexdata: {},
       selected_tool: null,
       colors: ['#ff0000','#00ff00','#0000ff'],
       selected_color_index: null,
       color_picker_value: '',
       will_pick_color: false,
-      hexdata: {}
+      file_operation: null
     };
     this.handleHexClick = this.handleHexClick.bind(this);
     this.handleToolbar = this.handleToolbar.bind(this);
@@ -135,6 +136,7 @@ class App extends React.Component {
           selected_color_index={this.state.selected_color_index}
           color_picker_value={this.state.color_picker_value}
           will_pick_color={this.state.will_pick_color}
+          file_operation={this.state.file_operation}
           handleToolbar={this.handleToolbar}
         />
       </div>

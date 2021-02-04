@@ -5,7 +5,7 @@
   background-color: var(--toolbar-background);
   color: white;
 }
-.MainToolbar span.title {
+.MainToolbar > span.title {
   font-size: 2rem;
   padding: .2rem 2rem;
 }
