@@ -1,8 +1,9 @@
-import './MainToolbar.css';
+import './MainToolbar.scss';
 import FileDropdown from './FileDropdown';
 import OptionsDropdown from './OptionsDropdown';
 import ToolbarButton from '../ToolbarButton';
-import Modal from '../Modal';
+import FileLoadModal from './FileLoadModal'
+import FileSaveModal from './FileSaveModal'
 import WhitePlus from '../assets/white-plus.svg';
 import RedX from '../assets/red-x.svg';
 
@@ -46,6 +47,13 @@ function MainToolbar(props) {
         onClick={() => props.handleToolbar('erase')}
         />
       </div>
+      {props.file_operation === 'load' &&
+      <FileLoadModal
+      handleClose={() => props.handleToolbar('file-operation-close')}/>}
+      {props.file_operation === 'save' &&
+      <FileSaveModal
+      handleClose={() => props.handleToolbar('file-operation-close')}
+      getDownload={props.getDownload}/>}
     </div>
   );
 }

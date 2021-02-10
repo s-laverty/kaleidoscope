@@ -1,4 +1,4 @@
-import './ToolbarButton.css';
+import './ToolbarButton.scss';
 
 function ToolbarButton(props) {
   let className=['ToolbarButton'];

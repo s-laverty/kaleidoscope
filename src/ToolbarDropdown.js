@@ -18,7 +18,6 @@ class ToolbarDropdown extends React.Component {
     }
     if (this.props.disabled) className.push('disabled');
     if (this.props.force_open) className.push('force-open');
-    let style=null;
     return (
       <div className={className.join(' ')}>
         <ToolbarButton
@@ -28,7 +27,7 @@ class ToolbarDropdown extends React.Component {
         onClick={() => this.setState(state => ({collapsed: !state.collapsed, transitioning: true}))}
         />
         <hr className='drop-list-separator'/>
-        <div className='drop-list'
+        <div className='drop-list subtle-shadow'
         onTransitionEnd={e => e.propertyName === 'opacity' && this.setState({transitioning: false})}>
           {this.props.buttons}
         </div>

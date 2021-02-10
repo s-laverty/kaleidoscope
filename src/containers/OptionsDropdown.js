@@ -47,7 +47,7 @@ class OptionsDropdown extends React.Component {
     );
   }
 
-  componentDidUpdate(oldProps, oldState) {
+  componentDidUpdate() {
     if (this.props.will_pick_color) {
       this.color_picker_input.current.onchange =
         () => this.props.handleToolbar('change-color-close');

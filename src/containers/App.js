@@ -1,5 +1,5 @@
 import React from 'react'
-import './App.css';
+import './App.scss';
 import DisplayArea from './DisplayArea';
 import MainToolbar from './MainToolbar';
 
@@ -17,112 +17,100 @@ class App extends React.Component {
     };
     this.handleHexClick = this.handleHexClick.bind(this);
     this.handleToolbar = this.handleToolbar.bind(this);
+    this.getDownload = this.getDownload.bind(this);
   }
   handleHexClick(x,y) {
     const key = `${x},${y}`;
-    switch (this.state.selected_tool) {
-      case 'fill':
-      case 'change-color':
-        this.setState(state => ({
-          selected_tool: 'fill',
-          hexdata: {...state.hexdata,
-            [key]: state.colors[state.selected_color_index]
-          }
-        }));
-        break;
-      case 'erase':
-        this.setState(state => ({
-          hexdata: {...state.hexdata,
-            [key]: undefined
-          }
-        }));
-        break;
-      default: return;
+    const type = this.state.selected_tool;
+    if (['fill','change-color'].includes(type)) {
+      this.setState(state => ({
+        selected_tool: 'fill',
+        hexdata: {...state.hexdata,
+          [key]: state.colors[state.selected_color_index]
+        }
+      }));
+    } else if (type === 'erase') {
+      this.setState(state => ({
+        hexdata: {...state.hexdata,
+          [key]: undefined
+        }
+      }));
     }
   }
   handleToolbar(type, ...args) {
-    switch (type) {
-      case 'load':
-        let saved_hexdata = JSON.parse(localStorage.getItem('hexdata'));
-        let saved_colors = JSON.parse(localStorage.getItem('colors'));
-        if (!saved_hexdata || !saved_colors) {
-          alert('It appears there is no save data on this computer!');
-          break;
-        }
-        if (window.confirm('Are you sure you want to overwrite your current project?')) {
-          this.setState({
-            hexdata: saved_hexdata,
-            colors: saved_colors,
-            selected_tool: null,
-            selected_color_index: null
-          });
-        }
-        break;
-      case 'save':
-        localStorage.setItem('hexdata', JSON.stringify(this.state.hexdata));
-        localStorage.setItem('colors', JSON.stringify(this.state.colors));
-        break;
-      case 'color':
-        this.setState({
-          selected_tool: 'fill',
-          selected_color_index: args[0]
-        });
-        break;
-      case 'add-color':
-        this.setState(state => {
-          let new_color = `#${Math.floor(Math.random()*(1<<(8*3))).toString(16).padStart(6,'0')}`;
-          let l = state.colors.length;
-          let new_colors = state.colors.slice();
-          new_colors.push(new_color);
-          return {
-            selected_tool: 'change-color',
-            colors: new_colors,
-            selected_color_index: l,
-            color_picker_value: new_color,
-            will_pick_color: true
-          };
-        });
-        break;
-      case 'change-color-click':
-        this.setState(state => ({
+    if (type === 'load') {
+      this.setState({file_operation: 'load'});
+    } else if (type === 'save') {
+      this.setState({file_operation: 'save'});
+    } else if (type === 'file-operation-close') {
+      this.setState({file_operation: null});
+    } else if (type ==='color') {
+      this.setState({
+        selected_tool: 'fill',
+        selected_color_index: args[0]
+      });
+    } else if (type === 'add-color') {
+      this.setState(state => {
+        let new_color = `#${Math.floor(Math.random()*(1<<(8*3))).toString(16).padStart(6,'0')}`;
+        let l = state.colors.length;
+        let new_colors = state.colors.slice();
+        new_colors.push(new_color);
+        return {
           selected_tool: 'change-color',
-          color_picker_value: state.colors[state.selected_color_index],
+          colors: new_colors,
+          selected_color_index: l,
+          color_picker_value: new_color,
           will_pick_color: true
-        }));
-        break;
-      case 'change-color':
-        this.setState(state => {
-          const new_colors = state.colors.slice();
-          new_colors[state.selected_color_index] = args[0];
-          return {
-            colors: new_colors,
-            color_picker_value: args[0]
-          };
-        });
-        break;
-      case 'change-color-close':
-        this.setState({selected_tool: 'fill'});
-        break;
-      case 'remove-color':
-        this.setState(state => {
-          const new_colors = state.colors.slice(0,state.selected_color_index).concat(
-            state.colors.slice(state.selected_color_index+1));
-          return {
-            selected_tool: null,
-            colors: new_colors,
-            selected_color_index: null
-          }
-        });
-        break;
-      case 'erase':
-        this.setState({
-          selected_tool: 'erase',
+        };
+      });
+    } else if (type === 'change-color-click') {
+      this.setState(state => ({
+        selected_tool: 'change-color',
+        color_picker_value: state.colors[state.selected_color_index],
+        will_pick_color: true
+      }));
+    } else if (type === 'change-color') {
+      this.setState(state => {
+        const new_colors = state.colors.slice();
+        new_colors[state.selected_color_index] = args[0];
+        return {
+          colors: new_colors,
+          color_picker_value: args[0]
+        };
+      });
+    } else if (type === 'change-color-close') {
+      this.setState({selected_tool: 'fill'});
+    } else if (type === 'remove-color') {
+      this.setState(state => {
+        const new_colors = state.colors.slice(0,state.selected_color_index).concat(
+          state.colors.slice(state.selected_color_index+1));
+        return {
+          selected_tool: null,
+          colors: new_colors,
           selected_color_index: null
-        });
-        break;
-      default: break;
+        }
+      });
+    } else if (type === 'erase') {
+      this.setState({
+        selected_tool: 'erase',
+        selected_color_index: null
+      });
+    } else console.warn(`Unrecognized toolbar command: ${type}`);
+  }
+
+  loadFile(file, action) {
+    if (action === 'validate') {
+
     }
   }
+
+  getDownload() {
+    return encodeURIComponent(JSON.stringify({
+      hexdata: this.state.hexdata,
+      colors: this.state.colors
+    }));
+  }
+
   render() {
     return (
       <div className="App">
@@ -138,6 +126,7 @@ class App extends React.Component {
           will_pick_color={this.state.will_pick_color}
           file_operation={this.state.file_operation}
           handleToolbar={this.handleToolbar}
+          getDownload={this.getDownload}
         />
       </div>
     );
