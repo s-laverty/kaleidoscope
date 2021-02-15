@@ -9,12 +9,12 @@ class FileSaveModal extends React.Component {
       will_download: false
     }
     this.download_link = React.createRef();
-    this.file = null;
-    this.handleDownload = this.handleDownload.bind(this);
+    this.fileURI = null;
+    this.handleSubmit = this.handleSubmit.bind(this);
   }
 
-  handleDownload() {
-    this.file = this.props.getDownload();
+  handleSubmit() {
+    this.fileURI = this.props.getDownloadURI();
     this.setState({will_download: true});
   }
 
@@ -27,8 +27,8 @@ class FileSaveModal extends React.Component {
         <div className='FileSaveModal flex-center'>
           <div className='content'>
             <form action=''
-            onSubmit={e => {this.handleDownload(); e.preventDefault();}}>
-              <label for='filename'>Filename: </label>
+            onSubmit={e => {this.handleSubmit(); e.preventDefault();}}>
+              <label htmlFor='filename'>Filename: </label>
               <input name='filename' type='text' value={this.state.filename}
               onChange={e => this.setState({filename: e.target.value})}
               onKeyPress={e => {console.log(e);}}/>.json<br/>
@@ -36,7 +36,7 @@ class FileSaveModal extends React.Component {
             </form>
             {this.state.will_download && 
             <a ref={this.download_link}
-            href={'data:application/json,' + this.file}
+            href={'data:application/json,' + this.fileURI}
             download={this.state.filename + '.json'}>Download</a>}
           </div>
         </div>

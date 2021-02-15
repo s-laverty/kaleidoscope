@@ -17,7 +17,8 @@ class App extends React.Component {
     };
     this.handleHexClick = this.handleHexClick.bind(this);
     this.handleToolbar = this.handleToolbar.bind(this);
-    this.getDownload = this.getDownload.bind(this);
+    this.loadFileText = this.loadFileText.bind(this);
+    this.getDownloadURI = this.getDownloadURI.bind(this);
   }
   handleHexClick(x,y) {
     const key = `${x},${y}`;
@@ -98,17 +99,30 @@ class App extends React.Component {
     } else console.warn(`Unrecognized toolbar command: ${type}`);
   }
 
-  loadFile(file, action) {
-    if (action === 'validate') {
-
-    }
-  }
-
-  getDownload() {
+  getDownloadURI() {
     return encodeURIComponent(JSON.stringify({
       hexdata: this.state.hexdata,
       colors: this.state.colors
     }));
+  }
+
+  loadFileText(file_text) {
+    let result;
+    try {
+      result = JSON.parse(file_text);
+    } catch (e) {
+      return false;
+    }
+    const valid_props = new Set(['hexdata', 'colors']);
+    for (let prop in result) {
+      if (!valid_props.has(prop)) return false;
+      valid_props.delete(prop);
+    }
+    if (valid_props.size) return false;
+    if (window.confirm('Are you sure you want to load this file? All unsaved changes will be lost.')) {
+      this.setState(result);
+    }
+    return true;
   }
 
   render() {
@@ -126,7 +140,8 @@ class App extends React.Component {
           will_pick_color={this.state.will_pick_color}
           file_operation={this.state.file_operation}
           handleToolbar={this.handleToolbar}
-          getDownload={this.getDownload}
+          getDownloadURI={this.getDownloadURI}
+          loadFileText={this.loadFileText}
         />
       </div>
     );

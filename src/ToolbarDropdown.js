@@ -1,5 +1,5 @@
 import React from 'react';
-import './ToolbarDropdown.css';
+import './ToolbarDropdown.scss';
 import ToolbarButton from './ToolbarButton';
 
 class ToolbarDropdown extends React.Component {

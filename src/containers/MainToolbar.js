@@ -47,13 +47,14 @@ function MainToolbar(props) {
         onClick={() => props.handleToolbar('erase')}
         />
       </div>
-      {props.file_operation === 'load' &&
-      <FileLoadModal
-      handleClose={() => props.handleToolbar('file-operation-close')}/>}
       {props.file_operation === 'save' &&
       <FileSaveModal
       handleClose={() => props.handleToolbar('file-operation-close')}
-      getDownload={props.getDownload}/>}
+      getDownloadURI={props.getDownloadURI}/>}
+      {props.file_operation === 'load' &&
+      <FileLoadModal
+      handleClose={() => props.handleToolbar('file-operation-close')}
+      loadFileText={props.loadFileText}/>}
     </div>
   );
 }
