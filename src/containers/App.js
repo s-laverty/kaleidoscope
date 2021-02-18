@@ -8,6 +8,7 @@ class App extends React.Component {
     super();
     this.state = {
       hexdata: {},
+      selected_dropdown: null,
       selected_tool: null,
       colors: ['#ff0000','#00ff00','#0000ff'],
       selected_color_index: null,
@@ -15,11 +16,18 @@ class App extends React.Component {
       will_pick_color: false,
       file_operation: null
     };
+    this.handleClick = this.handleClick.bind(this);
     this.handleHexClick = this.handleHexClick.bind(this);
     this.handleToolbar = this.handleToolbar.bind(this);
     this.loadFileText = this.loadFileText.bind(this);
     this.getDownloadURI = this.getDownloadURI.bind(this);
   }
+
+  handleClick() {
+    if (this.state.selected_tool === 'change-color')
+      this.setState({selected_tool: 'fill'});
+  }
+
   handleHexClick(x,y) {
     const key = `${x},${y}`;
     const type = this.state.selected_tool;
@@ -39,7 +47,11 @@ class App extends React.Component {
     }
   }
   handleToolbar(type, ...args) {
-    if (type === 'load') {
+    if (type === 'dropdown-toggle') {
+      this.setState({
+        selected_dropdown: (this.state.selected_dropdown === args[0] ? null : args[0])
+      });
+    } else if (type === 'load') {
       this.setState({file_operation: 'load'});
     } else if (type === 'save') {
       this.setState({file_operation: 'save'});
@@ -127,12 +139,13 @@ class App extends React.Component {
 
   render() {
     return (
-      <div className="App">
+      <div className='App' onClick={this.handleClick}>
         <DisplayArea
           hexdata={this.state.hexdata}
           handleHexClick={this.handleHexClick}
         />
         <MainToolbar
+          selected_dropdown={this.state.selected_dropdown}
           selected_tool={this.state.selected_tool}
           colors={this.state.colors}
           selected_color_index={this.state.selected_color_index}

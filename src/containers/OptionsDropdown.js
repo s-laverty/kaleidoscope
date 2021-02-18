@@ -1,6 +1,7 @@
 import React from 'react';
 import ToolbarDropdown from '../ToolbarDropdown';
 import ToolbarButton from '../ToolbarButton';
+import './OptionsDropdown.scss';
 import ColorPickerIcon from '../assets/color-picker-icon.svg';
 import RedX from '../assets/red-x.svg';
 
@@ -40,10 +41,14 @@ class OptionsDropdown extends React.Component {
     } else disabled = true;
     return (
       <ToolbarDropdown
-      name='Options'
-      disabled={disabled}
-      force_open={force_open}
-      buttons={buttons}/>
+        className='OptionsDropdown'
+        name='Options'
+        collapsed={this.props.collapsed}
+        handleToggle={this.props.handleToggle}
+        disabled={disabled}
+        force_open={force_open}
+        buttons={buttons}
+      />
     );
   }
 

@@ -23,38 +23,46 @@ function MainToolbar(props) {
     <div className='MainToolbar'>
       <span className='title flex-center'>Kaleidoscope</span>
       <FileDropdown
-      file_operation={props.file_operation}
-      handleToolbar={props.handleToolbar}/>
+        collapsed={props.selected_dropdown !== 'file'}
+        handleToggle={() => props.handleToolbar('dropdown-toggle', 'file')}
+        file_operation={props.file_operation}
+        handleToolbar={props.handleToolbar}
+      />
       <OptionsDropdown
-      selected_tool={props.selected_tool}
-      color_picker_value={props.color_picker_value}
-      will_pick_color={props.will_pick_color}
-      handleToolbar={props.handleToolbar}/>
+        collapsed={props.selected_dropdown !== 'options'}
+        handleToggle={() => props.handleToolbar('dropdown-toggle', 'options')}
+        selected_tool={props.selected_tool}
+        color_picker_value={props.color_picker_value}
+        will_pick_color={props.will_pick_color}
+        handleToolbar={props.handleToolbar}
+      />
       <div className='tools-wrapper'>
         {colors}
         <ToolbarButton
-        text='Add Color'
-        icon={{src: WhitePlus}}
-        onClick={() => props.handleToolbar('add-color')}
+          text='Add Color'
+          icon={{src: WhitePlus}}
+          onClick={() => props.handleToolbar('add-color')}
         />
         <ToolbarButton
-        text='Erase'
-        icon={{
-          src: RedX,
-          style: {backgroundColor: 'white'}
-        }}
-        selected={props.selected_tool === 'erase'}
-        onClick={() => props.handleToolbar('erase')}
+          text='Erase'
+          icon={{
+            src: RedX,
+            style: {backgroundColor: 'white'}
+          }}
+          selected={props.selected_tool === 'erase'}
+          onClick={() => props.handleToolbar('erase')}
         />
       </div>
       {props.file_operation === 'save' &&
       <FileSaveModal
-      handleClose={() => props.handleToolbar('file-operation-close')}
-      getDownloadURI={props.getDownloadURI}/>}
+        handleClose={() => props.handleToolbar('file-operation-close')}
+        getDownloadURI={props.getDownloadURI}
+      />}
       {props.file_operation === 'load' &&
       <FileLoadModal
-      handleClose={() => props.handleToolbar('file-operation-close')}
-      loadFileText={props.loadFileText}/>}
+        handleClose={() => props.handleToolbar('file-operation-close')}
+        loadFileText={props.loadFileText}
+      />}
     </div>
   );
 }

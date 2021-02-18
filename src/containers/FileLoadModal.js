@@ -1,5 +1,6 @@
 import React from 'react';
 import Modal from '../Modal';
+import './FileLoadModal.scss';
 
 class FileLoadModal extends React.Component {
   constructor(props) {
@@ -61,10 +62,6 @@ class FileLoadModal extends React.Component {
             This file does not contain a valid Kaleidoscope save state. Please select
             a different file.
           </span>}
-          {this.state.prompt_confirm &&
-            <div className='confirm-prompt'>
-            </div>
-          }
           </div>
         </div>
       }/>
