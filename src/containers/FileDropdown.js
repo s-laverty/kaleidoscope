@@ -9,19 +9,28 @@ function FileDropdown(props) {
       title='File'
       collapsed={props.collapsed}
       handleToggle={props.handleToggle}
-      buttons={[
-        <ToolbarButton key={'load'}
-          text='Load'
-          selected={props.file_operation === 'load'}
-          onClick={() => props.handleToolbar('load')}
-        />,
-        <ToolbarButton key={'save'}
-          text='Save'
-          selected={props.file_operation === 'save'}
-          onClick={() => props.handleToolbar('save')}
-        />
-      ]}
-    />
+    >
+      <ToolbarButton key={'load'}
+        text='Load'
+        selected={props.file_operation === 'load'}
+        onClick={() => props.handleToolbar('load')}
+      />
+      <ToolbarButton key={'save'}
+        text='Save'
+        selected={props.file_operation === 'save'}
+        onClick={() => props.handleToolbar('save')}
+      />
+      <ToolbarButton key={'undo'}
+        text='Undo'
+        disabled={true}
+        onClick={() => props.handleToolbar('undo')}
+      />
+      <ToolbarButton key={'redo'}
+        text='Redo'
+        disabled={true}
+        onClick={() => props.handleToolbar('redo')}
+      />
+    </ToolbarDropdown>
   );
 }
 

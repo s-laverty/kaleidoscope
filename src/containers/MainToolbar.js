@@ -11,13 +11,14 @@ function MainToolbar(props) {
   const colors = [];
   for (let i = 0; i < props.colors.length; ++i) {
     colors.push(<ToolbarButton key={i}
-    onClick={() => props.handleToolbar('color', i)}
-    selected={props.selected_color_index === i}
-    text={`Color #${i+1}`}
-    icon={{
-      border: true,
-      style: {backgroundColor: props.colors[i]}
-    }}/>);
+      onClick={() => props.handleToolbar('color', i)}
+      selected={props.selected_color_index === i}
+      text={`Color #${i+1}`}
+      icon={{
+        border: true,
+        style: {backgroundColor: props.colors[i]}
+      }}
+    />);
   }
   return (
     <div className='MainToolbar'>

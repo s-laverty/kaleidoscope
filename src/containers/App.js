@@ -13,14 +13,23 @@ class App extends React.Component {
       selected_option: null,
       selected_tool: null,
       colors: ['#ff0000','#00ff00','#0000ff'],
-      selected_color_index: null
+      selected_color_index: null,
+      history: [],
+      history_index: 0
     };
-    this.history = [];
     this.handleClick = this.handleClick.bind(this);
     this.handleHexClick = this.handleHexClick.bind(this);
     this.handleToolbar = this.handleToolbar.bind(this);
     this.loadFileText = this.loadFileText.bind(this);
     this.getDownloadURI = this.getDownloadURI.bind(this);
+  }
+
+  logChange() {
+    this.setState(state => {
+      // Due to the unique nature of history, it will be modified in-place.
+      const history = state.history;
+
+    });
   }
 
   handleClick() {
@@ -122,6 +131,10 @@ class App extends React.Component {
         selected_tool: 'erase',
         selected_color_index: null
       });
+    } else if (type === 'clear-all') {
+      if (window.confirm('Are you sure you want to clear everything?')) {
+        this.setState({hexdata: {}});
+      }
     } else console.warn(`Unrecognized toolbar command: ${type}`);
   }
 
@@ -146,7 +159,7 @@ class App extends React.Component {
     }
     if (valid_props.size) return false;
     if (window.confirm('Are you sure you want to load this file? All unsaved changes will be lost.')) {
-      this.setState(result);
+      this.setState({...result, selected_dropdown: null, selected_tool: null, selected_color_index: null});
     }
     return true;
   }

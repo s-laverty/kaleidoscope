@@ -20,15 +20,15 @@ class OptionsDropdown extends React.Component {
         <ToolbarButton key={'change-color'}
           text='Change Color'
           icon={{border: true, src: ColorPickerIcon}}
-          custom={
-            <input type='color' ref={this.color_picker_input}
-            value={this.props.color_picker_value}
-            onClick={e => e.stopPropagation()}
-            onChange={e => this.props.handleToolbar('change-color', e.target.value)}/>
-          }
           selected={this.props.selected_option === 'change-color'}
           onClick={() => this.props.handleToolbar('change-color-click')}
-        />,
+        >
+          <input type='color' ref={this.color_picker_input}
+            value={this.props.color_picker_value}
+            onClick={e => e.stopPropagation()}
+            onChange={e => this.props.handleToolbar('change-color', e.target.value)}
+          />
+        </ToolbarButton>,
         <ToolbarButton key={'ink-dropper'}
           text='Ink Dropper'
           selected={this.props.selected_option === 'ink-dropper'}
@@ -37,13 +37,22 @@ class OptionsDropdown extends React.Component {
         <ToolbarButton key={'remove-color'}
           text='Remove Color'
           icon={{
-            src: RedX,
-            style: {backgroundColor: 'white'}
+            src: RedX, style: {backgroundColor: 'white'}
           }}
           onClick={() => this.props.handleToolbar('remove-color')}
         />
       );
       if (this.props.selected_option === 'change-color') force_open = true;
+    } else if (this.props.selected_tool === 'erase') {
+      buttons.push(
+        <ToolbarButton key={'clear-all'}
+          text='Clear All'
+          icon={{
+            src: RedX, style: {backgroundColor: 'white'}
+          }}
+          onClick={() => this.props.handleToolbar('clear-all')}
+        />
+      );
     } else disabled = true;
     return (
       <ToolbarDropdown
@@ -53,8 +62,9 @@ class OptionsDropdown extends React.Component {
         handleToggle={this.props.handleToggle}
         disabled={disabled}
         force_open={force_open}
-        buttons={buttons}
-      />
+      >
+        {buttons}
+      </ToolbarDropdown>
     );
   }
 

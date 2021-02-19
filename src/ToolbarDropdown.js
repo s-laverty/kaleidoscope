@@ -23,15 +23,17 @@ class ToolbarDropdown extends React.Component {
     return (
       <div className={className}>
         <ToolbarButton
-        text={this.props.title}
-        custom={<span className='dropdown-icon'></span>}
-        disabled={this.props.disabled}
-        onClick={this.props.handleToggle}
-        />
+          text={this.props.title}
+          disabled={this.props.disabled}
+          onClick={this.props.handleToggle}
+        >
+          <span className='dropdown-icon'></span>
+        </ToolbarButton>
         <hr className='drop-list-separator'/>
         <div className='drop-list subtle-shadow'
-        onTransitionEnd={e => e.propertyName === 'opacity' && this.setState({transitioning: false})}>
-          {this.props.buttons}
+          onTransitionEnd={e => e.propertyName === 'opacity' && this.setState({transitioning: false})}
+        >
+          {this.props.children}
         </div>
       </div>
     );
