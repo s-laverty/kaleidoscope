@@ -8,11 +8,12 @@ function Modal(props) {
         <div className='title-bar'>
           <span className='title'>{props.title}</span>
           <ToolbarButton
-            custom={<span className='close-icon'/>}
             onClick={props.handleClose}
-          />
+          >
+            <span className='close-icon'/>
+          </ToolbarButton>
         </div>
-        <div className='content'>{props.content}</div>
+        <div className='content'>{props.children}</div>
       </div>
     </div>
   )

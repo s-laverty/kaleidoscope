@@ -23,7 +23,7 @@ class FileSaveModal extends React.Component {
       <Modal
       title='Save File'
       handleClose={this.props.handleClose}
-      content={
+      >
         <div className='FileSaveModal flex-center'>
           <div className='content'>
             <form action=''
@@ -40,8 +40,7 @@ class FileSaveModal extends React.Component {
             download={this.state.filename + '.json'}>Download</a>}
           </div>
         </div>
-      }
-      />
+      </Modal>
     );
   }
 

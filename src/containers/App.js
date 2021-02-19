@@ -17,6 +17,7 @@ class App extends React.Component {
       history: [],
       history_index: 0
     };
+    this.state.history.push({hexdata: this.state.hexdata, colors: this.state.colors});
     this.handleClick = this.handleClick.bind(this);
     this.handleHexClick = this.handleHexClick.bind(this);
     this.handleToolbar = this.handleToolbar.bind(this);
@@ -184,6 +185,9 @@ class App extends React.Component {
         />
       </div>
     );
+  }
+  componentDidMount() {
+    this.logChange();
   }
   componentDidUpdate() {
     if (this.state.selected_option === 'change-color-click') {

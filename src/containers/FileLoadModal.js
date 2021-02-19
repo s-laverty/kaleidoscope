@@ -43,7 +43,7 @@ class FileLoadModal extends React.Component {
       <Modal
       title='Load File'
       handleClose={this.props.handleClose}
-      content={
+      >
         <div className='FileLoadModal flex-center'>
           <div className='content'>
           <form action='' disabled={this.state.is_loading}
@@ -64,7 +64,7 @@ class FileLoadModal extends React.Component {
           </span>}
           </div>
         </div>
-      }/>
+      </Modal>
     );
   }
 }
