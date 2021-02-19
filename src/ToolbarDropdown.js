@@ -23,7 +23,7 @@ class ToolbarDropdown extends React.Component {
     return (
       <div className={className}>
         <ToolbarButton
-        text={this.props.name}
+        text={this.props.title}
         custom={<span className='dropdown-icon'></span>}
         disabled={this.props.disabled}
         onClick={this.props.handleToggle}

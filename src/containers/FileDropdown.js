@@ -6,7 +6,7 @@ function FileDropdown(props) {
   return (
     <ToolbarDropdown
       className='FileDropdown'
-      name='File'
+      title='File'
       collapsed={props.collapsed}
       handleToggle={props.handleToggle}
       buttons={[

@@ -1,6 +1,6 @@
 .ToolbarButton {
-  --border-thickness: .125rem;
-  padding: .2rem;
+  --border-thickness: .125em;
+  padding: .2em;
   border: var(--border-thickness) solid transparent;
   outline: none;
   background-color: transparent;
@@ -26,13 +26,13 @@
   }
 
   & > .icon {
-    height: 2rem;
-    width: 2rem;
+    height: 2em;
+    width: 2em;
   }
   & > span.icon {
     display: inline-block;
     &.border {
-      border: .2rem solid white;
+      border: .2em solid white;
     }
   }
 }

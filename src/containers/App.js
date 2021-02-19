@@ -9,13 +9,13 @@ class App extends React.Component {
     this.state = {
       hexdata: {},
       selected_dropdown: null,
+      file_operation: null,
+      selected_option: null,
       selected_tool: null,
       colors: ['#ff0000','#00ff00','#0000ff'],
-      selected_color_index: null,
-      color_picker_value: '',
-      will_pick_color: false,
-      file_operation: null
+      selected_color_index: null
     };
+    this.history = [];
     this.handleClick = this.handleClick.bind(this);
     this.handleHexClick = this.handleHexClick.bind(this);
     this.handleToolbar = this.handleToolbar.bind(this);
@@ -24,20 +24,34 @@ class App extends React.Component {
   }
 
   handleClick() {
-    if (this.state.selected_tool === 'change-color')
-      this.setState({selected_tool: 'fill'});
+    this.setState(state => {
+      if (state.selected_option === 'change-color')
+        return {selected_option: null};
+    });
   }
 
   handleHexClick(x,y) {
     const key = `${x},${y}`;
     const type = this.state.selected_tool;
-    if (['fill','change-color'].includes(type)) {
-      this.setState(state => ({
-        selected_tool: 'fill',
-        hexdata: {...state.hexdata,
-          [key]: state.colors[state.selected_color_index]
-        }
-      }));
+    if (type === 'color') {
+      if (this.state.selected_option === 'ink-dropper')
+        this.setState(state => {
+          if (state.hexdata[key]) {
+            const new_colors = state.colors.slice();
+            new_colors[state.selected_color_index] = state.hexdata[key];
+            return {
+              selected_option: null,
+              colors: new_colors
+            };
+          }
+        });
+      else
+        this.setState(state => ({
+          selected_tool: 'color',
+          hexdata: {...state.hexdata,
+            [key]: state.colors[state.selected_color_index]
+          }
+        }));
     } else if (type === 'erase') {
       this.setState(state => ({
         hexdata: {...state.hexdata,
@@ -48,8 +62,12 @@ class App extends React.Component {
   }
   handleToolbar(type, ...args) {
     if (type === 'dropdown-toggle') {
-      this.setState({
-        selected_dropdown: (this.state.selected_dropdown === args[0] ? null : args[0])
+      this.setState(state => {
+        if (state.selected_option === 'change-color' && !state.selected_dropdown) return;
+        return {
+          selected_dropdown: (state.selected_dropdown === args[0] ? null : args[0]),
+          selected_option: null
+        };
       });
     } else if (type === 'load') {
       this.setState({file_operation: 'load'});
@@ -59,7 +77,7 @@ class App extends React.Component {
       this.setState({file_operation: null});
     } else if (type ==='color') {
       this.setState({
-        selected_tool: 'fill',
+        selected_tool: 'color',
         selected_color_index: args[0]
       });
     } else if (type === 'add-color') {
@@ -69,30 +87,26 @@ class App extends React.Component {
         let new_colors = state.colors.slice();
         new_colors.push(new_color);
         return {
-          selected_tool: 'change-color',
+          selected_tool: 'color',
+          selected_option: 'change-color-click',
           colors: new_colors,
-          selected_color_index: l,
-          color_picker_value: new_color,
-          will_pick_color: true
+          selected_color_index: l
         };
       });
     } else if (type === 'change-color-click') {
-      this.setState(state => ({
-        selected_tool: 'change-color',
-        color_picker_value: state.colors[state.selected_color_index],
-        will_pick_color: true
-      }));
+      this.setState({selected_option: 'change-color-click'});
     } else if (type === 'change-color') {
       this.setState(state => {
         const new_colors = state.colors.slice();
         new_colors[state.selected_color_index] = args[0];
-        return {
-          colors: new_colors,
-          color_picker_value: args[0]
-        };
+        return {colors: new_colors};
       });
     } else if (type === 'change-color-close') {
-      this.setState({selected_tool: 'fill'});
+      this.setState({selected_option: null});
+    } else if (type === 'ink-dropper') {
+      this.setState(state => ({
+        selected_option: (state.selected_option === 'ink-dropper' ? null : 'ink-dropper')
+      }));
     } else if (type === 'remove-color') {
       this.setState(state => {
         const new_colors = state.colors.slice(0,state.selected_color_index).concat(
@@ -146,12 +160,11 @@ class App extends React.Component {
         />
         <MainToolbar
           selected_dropdown={this.state.selected_dropdown}
+          file_operation={this.state.file_operation}
+          selected_option={this.state.selected_option}
           selected_tool={this.state.selected_tool}
           colors={this.state.colors}
           selected_color_index={this.state.selected_color_index}
-          color_picker_value={this.state.color_picker_value}
-          will_pick_color={this.state.will_pick_color}
-          file_operation={this.state.file_operation}
           handleToolbar={this.handleToolbar}
           getDownloadURI={this.getDownloadURI}
           loadFileText={this.loadFileText}
@@ -160,8 +173,8 @@ class App extends React.Component {
     );
   }
   componentDidUpdate() {
-    if (this.state.will_pick_color) {
-      this.setState({will_pick_color: false});
+    if (this.state.selected_option === 'change-color-click') {
+      this.setState({selected_option: 'change-color'});
     }
   }
 }

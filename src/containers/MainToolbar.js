@@ -32,8 +32,8 @@ function MainToolbar(props) {
         collapsed={props.selected_dropdown !== 'options'}
         handleToggle={() => props.handleToolbar('dropdown-toggle', 'options')}
         selected_tool={props.selected_tool}
-        color_picker_value={props.color_picker_value}
-        will_pick_color={props.will_pick_color}
+        selected_option={props.selected_option}
+        color_picker_value={props.colors[props.selected_color_index]}
         handleToolbar={props.handleToolbar}
       />
       <div className='tools-wrapper'>
