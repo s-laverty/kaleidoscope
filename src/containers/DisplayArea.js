@@ -8,8 +8,7 @@ class DisplayArea extends React.Component {
     this.state = {
       scrollX: 0,
       scrollY: 0,
-      scale: 1.0,
-      hexdata: {}
+      scale: 1.0
     };
     this.container = React.createRef();
     /* Bind event handlers */
@@ -107,10 +106,14 @@ class DisplayArea extends React.Component {
       }
     }
     return (
-      <div className='DisplayArea flex-center' ref={this.container} onWheel={this.handleWheel}
-        onDragStart={e => e.preventDefault()} onMouseMove={this.handleMouseMove}
-        onMouseDown={this.handleMouseDown} onMouseUp={this.handleMouseUp}
-        onMouseLeave={this.handleMouseLeave} onClickCapture={this.handleClickCapture}>
+      <div className='DisplayArea flex-center' ref={this.container}
+        onWheel={this.handleWheel}
+        onMouseMove={this.handleMouseMove}
+        onMouseDown={this.handleMouseDown}
+        onMouseUp={this.handleMouseUp}
+        onMouseLeave={this.handleMouseLeave}
+        onClickCapture={this.handleClickCapture}
+      >
         <div className='hexOrigin'
           style={{transform: `translate(${-this.state.scrollX}px,${-this.state.scrollY}px)`
             + `scale(${this.state.scale})`}}>

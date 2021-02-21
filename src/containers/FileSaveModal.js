@@ -32,12 +32,12 @@ class FileSaveModal extends React.Component {
               <input name='filename' type='text' value={this.state.filename}
               onChange={e => this.setState({filename: e.target.value})}
               onKeyPress={e => {console.log(e);}}/>.json<br/>
-              <button type='submit'>Download</button>
+              <button type='submit'>Save</button>
             </form>
             {this.state.will_download && 
             <a ref={this.download_link}
             href={'data:application/json,' + this.fileURI}
-            download={this.state.filename + '.json'}>Download</a>}
+            download={this.state.filename + '.json'}>Click here to save your project</a>}
           </div>
         </div>
       </Modal>
