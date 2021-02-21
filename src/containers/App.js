@@ -118,11 +118,26 @@ class App extends React.Component {
             history_index: state.history_index + 1
           };
       });
-    } else if (type ==='color') {
+    } else if (type === 'color') {
       this.setState({
         selected_tool: 'color',
         selected_color_index: args[0]
       });
+    } else if (type === 'color-swap') {
+      this.setState(state => {
+        let [i,j] = args.sort();
+        let selected_color_index = state.selected_color_index;
+        if (selected_color_index === i) selected_color_index = j;
+        else if (selected_color_index === j) selected_color_index = i;
+        const colors = state.colors.slice();
+        let temp = colors[i];
+        colors[i] = colors[j];
+        colors[j] = temp;
+        return {
+          selected_color_index: selected_color_index,
+          colors: colors
+        }
+      })
     } else if (type === 'add-color') {
       this.setState(state => {
         let new_color = `#${Math.floor(Math.random()*(1<<(8*3))).toString(16).padStart(6,'0')}`;

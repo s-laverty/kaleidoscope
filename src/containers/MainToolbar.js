@@ -12,12 +12,27 @@ function MainToolbar(props) {
   for (let i = 0; i < props.colors.length; ++i) {
     colors.push(<ToolbarButton key={i}
       onClick={() => props.handleToolbar('color', i)}
+      onDragStart={e => {
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('application/x-kaleidoscope-color', i);
+      }}
+      onDragOver={e => {
+        if (e.dataTransfer.types.includes('application/x-kaleidoscope-color')
+        && Number(e.dataTransfer.getData('application/x-kaleidoscope-color')) !== i)
+          e.preventDefault();
+      }}
+      onDrop={e => {
+        e.preventDefault();
+        props.handleToolbar('color-swap', i,
+          Number(e.dataTransfer.getData('application/x-kaleidoscope-color')));
+      }}
       selected={props.selected_color_index === i}
       text={`Color #${i+1}`}
       icon={{
         border: true,
         style: {backgroundColor: props.colors[i]}
       }}
+      draggable
     />);
   }
   return (
