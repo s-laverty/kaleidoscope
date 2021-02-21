@@ -1,14 +1,20 @@
 import './ToolbarButton.scss';
 
 function ToolbarButton(props) {
+  const {
+    selected=false,
+    icon=null,
+    text=null,
+    children=null,
+    ...other
+  } = props;
   let className='ToolbarButton';
-  if (props.selected) className += ' selected';
+  if (selected) className += ' selected';
   let icon_className = 'icon';
-  if (props.icon && props.icon.border) icon_className += ' border';
+  if (icon && icon.border) icon_className += ' border';
   return (
     <button className={className}
-    onClick={props.onClick}
-    disabled={props.disabled}>
+    {...other}>
       {props.icon && (props.icon.src ?
         <img className={icon_className}
         src={props.icon.src}
@@ -18,9 +24,9 @@ function ToolbarButton(props) {
         <span className={icon_className}
         style={props.icon.style}/>)
       }
-      {props.icon && <br/>}
-      {props.text}
-      {props.children}
+      {icon && <br/>}
+      {text}
+      {children}
     </button>
   );
 }

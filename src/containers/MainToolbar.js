@@ -27,6 +27,8 @@ function MainToolbar(props) {
         collapsed={props.selected_dropdown !== 'file'}
         handleToggle={() => props.handleToolbar('dropdown-toggle', 'file')}
         file_operation={props.file_operation}
+        undo={props.undo}
+        redo={props.redo}
         handleToolbar={props.handleToolbar}
       />
       <OptionsDropdown

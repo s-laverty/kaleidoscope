@@ -60,7 +60,7 @@
       opacity: 0;
     }
   }
-  &.hidden > {
+  &.hidden {
     & > .drop-list-separator, & > .drop-list {
       visibility: hidden;
     }

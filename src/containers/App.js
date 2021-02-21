@@ -6,38 +6,55 @@ import MainToolbar from './MainToolbar';
 class App extends React.Component {
   constructor() {
     super();
+    const hexdata = {};
+    const colors = ['#ff0000','#00ff00','#0000ff'];
     this.state = {
-      hexdata: {},
+      hexdata: hexdata,
       selected_dropdown: null,
       file_operation: null,
       selected_option: null,
       selected_tool: null,
-      colors: ['#ff0000','#00ff00','#0000ff'],
+      colors: colors,
       selected_color_index: null,
-      history: [],
+      history: [{hexdata: hexdata}],
       history_index: 0
     };
-    this.state.history.push({hexdata: this.state.hexdata, colors: this.state.colors});
     this.handleClick = this.handleClick.bind(this);
+    this.handleKeyDown = this.handleKeyDown.bind(this);
     this.handleHexClick = this.handleHexClick.bind(this);
     this.handleToolbar = this.handleToolbar.bind(this);
     this.loadFileText = this.loadFileText.bind(this);
     this.getDownloadURI = this.getDownloadURI.bind(this);
   }
 
-  logChange() {
+  saveState() {
     this.setState(state => {
-      // Due to the unique nature of history, it will be modified in-place.
-      const history = state.history;
-
+      const current = {
+        hexdata: state.hexdata
+      };
+      const previous = state.history[state.history_index];
+      if (Object.entries(current).every(([key,val]) => val === previous[key])) return;
+      const start = Math.max(state.history_index-(200-2), 0);
+      const new_history = state.history.slice(start,state.history_index+1);
+      new_history.push(current);
+      return {history: new_history, history_index: new_history.length-1};
     });
   }
 
   handleClick() {
     this.setState(state => {
-      if (state.selected_option === 'change-color')
+      if (state.selected_option === 'change-color') {
+        this.saveState();
         return {selected_option: null};
-    });
+      }
+    }, this.saveState);
+  }
+
+  handleKeyDown(e) {
+    if (e.ctrlKey) {
+      if (e.key === 'z') this.handleToolbar('undo');
+      else if (e.key === 'y') this.handleToolbar('redo');
+    }
   }
 
   handleHexClick(x,y) {
@@ -69,6 +86,7 @@ class App extends React.Component {
         }
       }));
     }
+    this.saveState();
   }
   handleToolbar(type, ...args) {
     if (type === 'dropdown-toggle') {
@@ -85,6 +103,21 @@ class App extends React.Component {
       this.setState({file_operation: 'save'});
     } else if (type === 'file-operation-close') {
       this.setState({file_operation: null});
+    } else if (type === 'undo') {
+      this.setState(state => {
+        if (state.history_index) {
+          return {...state.history[state.history_index-1],
+            history_index: state.history_index - 1
+          };
+        }
+      });
+    } else if (type === 'redo') {
+      this.setState(state => {
+        if (state.history.length > state.history_index + 1)
+          return {...state.history[state.history_index+1],
+            history_index: state.history_index + 1
+          };
+      });
     } else if (type ==='color') {
       this.setState({
         selected_tool: 'color',
@@ -160,7 +193,13 @@ class App extends React.Component {
     }
     if (valid_props.size) return false;
     if (window.confirm('Are you sure you want to load this file? All unsaved changes will be lost.')) {
-      this.setState({...result, selected_dropdown: null, selected_tool: null, selected_color_index: null});
+      this.setState({...result,
+        history: [{hexdata: result.hexdata}],
+        history_index: 0,
+        selected_dropdown: null,
+        selected_tool: null,
+        selected_color_index: null
+      });
     }
     return true;
   }
@@ -175,6 +214,8 @@ class App extends React.Component {
         <MainToolbar
           selected_dropdown={this.state.selected_dropdown}
           file_operation={this.state.file_operation}
+          undo={this.state.history_index}
+          redo={this.state.history.length - this.state.history_index - 1}
           selected_option={this.state.selected_option}
           selected_tool={this.state.selected_tool}
           colors={this.state.colors}
@@ -186,13 +227,16 @@ class App extends React.Component {
       </div>
     );
   }
-  componentDidMount() {
-    this.logChange();
-  }
   componentDidUpdate() {
     if (this.state.selected_option === 'change-color-click') {
       this.setState({selected_option: 'change-color'});
     }
+  }
+  componentDidMount() {
+    window.addEventListener('keydown', this.handleKeyDown);
+  }
+  componentWillUnmount() {
+    window.removeEventListener('keydown', this.handleKeyDown);
   }
 }
 
