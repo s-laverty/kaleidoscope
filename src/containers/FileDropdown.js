@@ -1,6 +1,6 @@
 import ToolbarDropdown from '../ToolbarDropdown';
 import ToolbarButton from '../ToolbarButton';
-import './FileDropdown.scss'
+import './FileDropdown.scss';
 
 const FileDropdown = props => (
   <ToolbarDropdown

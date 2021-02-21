@@ -7,7 +7,7 @@ import FileSaveModal from './FileSaveModal'
 import WhitePlus from '../assets/white-plus.svg';
 import RedX from '../assets/red-x.svg';
 
-function MainToolbar(props) {
+const MainToolbar = props => {
   const colors = [];
   for (let i = 0; i < props.colors.length; ++i) {
     colors.push(<ToolbarButton key={i}
@@ -39,6 +39,7 @@ function MainToolbar(props) {
     <div className='MainToolbar'>
       <span className='title flex-center'>Kaleidoscope</span>
       <div className='toolbar-wrapper'>
+        <ToolbarDropdown></ToolbarDropdown>
         <FileDropdown
           collapsed={props.selected_dropdown !== 'file'}
           handleToggle={() => props.handleToolbar('dropdown-toggle', 'file')}
@@ -85,6 +86,6 @@ function MainToolbar(props) {
       />}
     </div>
   );
-}
+};
 
 export default MainToolbar;
