@@ -38,38 +38,40 @@ function MainToolbar(props) {
   return (
     <div className='MainToolbar'>
       <span className='title flex-center'>Kaleidoscope</span>
-      <FileDropdown
-        collapsed={props.selected_dropdown !== 'file'}
-        handleToggle={() => props.handleToolbar('dropdown-toggle', 'file')}
-        file_operation={props.file_operation}
-        undo={props.undo}
-        redo={props.redo}
-        handleToolbar={props.handleToolbar}
-      />
-      <OptionsDropdown
-        collapsed={props.selected_dropdown !== 'options'}
-        handleToggle={() => props.handleToolbar('dropdown-toggle', 'options')}
-        selected_tool={props.selected_tool}
-        selected_option={props.selected_option}
-        color_picker_value={props.colors[props.selected_color_index]}
-        handleToolbar={props.handleToolbar}
-      />
-      <div className='tools-wrapper'>
-        {colors}
-        <ToolbarButton
-          text='Add Color'
-          icon={{src: WhitePlus}}
-          onClick={() => props.handleToolbar('add-color')}
+      <div className='toolbar-wrapper'>
+        <FileDropdown
+          collapsed={props.selected_dropdown !== 'file'}
+          handleToggle={() => props.handleToolbar('dropdown-toggle', 'file')}
+          file_operation={props.file_operation}
+          undo={props.undo}
+          redo={props.redo}
+          handleToolbar={props.handleToolbar}
         />
-        <ToolbarButton
-          text='Erase'
-          icon={{
-            src: RedX,
-            style: {backgroundColor: 'white'}
-          }}
-          selected={props.selected_tool === 'erase'}
-          onClick={() => props.handleToolbar('erase')}
+        <OptionsDropdown
+          collapsed={props.selected_dropdown !== 'options'}
+          handleToggle={() => props.handleToolbar('dropdown-toggle', 'options')}
+          selected_tool={props.selected_tool}
+          selected_option={props.selected_option}
+          color_picker_value={props.colors[props.selected_color_index]}
+          handleToolbar={props.handleToolbar}
         />
+        <div className='tools-wrapper'>
+          {colors}
+          <ToolbarButton
+            text='Add Color'
+            icon={{src: WhitePlus}}
+            onClick={() => props.handleToolbar('add-color')}
+          />
+          <ToolbarButton
+            text='Erase'
+            icon={{
+              src: RedX,
+              style: {backgroundColor: 'white'}
+            }}
+            selected={props.selected_tool === 'erase'}
+            onClick={() => props.handleToolbar('erase')}
+          />
+        </div>
       </div>
       {props.file_operation === 'save' &&
       <FileSaveModal

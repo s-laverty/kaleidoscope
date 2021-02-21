@@ -1,14 +1,16 @@
 .MainToolbar {
   display: flex;
   flex-direction: row;
+  flex-wrap: wrap;
   font-size: calc(max(0.7em, 1.1vw));
-  height: calc(4em + 20px);
   color: white;
   &::before {
     content: '';
-    position: absolute;
+    position: relative;
     width: 100%;
-    height: inherit;
+    height: 100%;
+    margin-right: -100%;
+    margin-bottom: -100%;
     background-color: var(--toolbar-background);
     z-index: -1;
   }
@@ -16,25 +18,36 @@
     font-size: 2em;
     padding: .1em 1em;
   }
-  & .ToolbarDropdown {
-    margin-right: .5em;
-  }
-  & .tools-wrapper {
-    margin: 0 auto;
+  & > .toolbar-wrapper {
+    flex-grow: 1;
+    max-width: 100%;
+    height: calc(4em + 20px);
     display: flex;
     flex-direction: row;
-    padding: .2em 0;
-    overflow-x: auto;
-    overflow-y: hidden;
-    & > * {
-      flex-shrink: 0;
+    & > .ToolbarDropdown {
+      margin-right: .5em;
     }
-    & .ToolbarButton {
-      min-width: 4.5em;
-      margin: 0 .2em;
+    & > .tools-wrapper {
+      margin: 0 auto;
+      display: flex;
+      flex-direction: row;
+      padding: .2em 0;
+      overflow-x: auto;
+      overflow-y: hidden;
+      & > * {
+        flex-shrink: 0;
+      }
+      & > .ToolbarButton {
+        min-width: 4.5em;
+        margin: 0 .2em;
+      }
     }
   }
-  & input[type=color] {
-    display: none;
+}
+@media screen and (max-width: 40rem) {
+  .MainToolbar {
+    & > span.title {
+      width: 100%;
+    }
   }
 }
