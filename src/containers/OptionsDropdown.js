@@ -22,7 +22,7 @@ class OptionsDropdown extends React.Component {
           text='Change Color'
           icon={{border: true, src: ColorPickerIcon}}
           selected={current.active_option === 'change-color'}
-          onClick={() => this.props.handleToolbar('change-color-click')}
+          onClick={() => this.props.handleToolbar('set-option', 'change-color-click')}
         >
           <input type='color' ref={this.color_picker_input}
             value={current.color_picker_value}
@@ -72,7 +72,7 @@ class OptionsDropdown extends React.Component {
   componentDidUpdate() {
     if (this.props.current.active_option === 'change-color-click') {
       this.color_picker_input.current.onchange =
-        () => this.props.handleToolbar('change-color-close');
+        () => this.props.handleToolbar('set-option', 'change-color');
       this.color_picker_input.current.click();
     }
   }

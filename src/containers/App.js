@@ -21,7 +21,8 @@ class App extends React.Component {
       zoom: 1.0
     },
     'hex-tessellate': {
-      tiledata: {}
+      tiledata: {},
+      zoom: 1.0
     }
   }
 
@@ -81,14 +82,26 @@ class App extends React.Component {
           }
         });
       },
-      'color': i => {
-        this.setState(state => ({
-          [state.mode]: {...state[state.mode],
-            active_tool: 'color',
-            active_color_index: i
+      'set-tool': (tool, ...args) => this.setState(state => {
+        const current = state[state.mode];
+        const other = {};
+        if (tool === 'color') {
+          const i = args[0];
+          other.active_color_index = i;
+          if (current.active_color_index === i) {
+            other.active_color_index = null;
+            tool = null;
           }
-        }));
-      },
+        } else if (current.active_tool === tool) tool = null;
+        return {[state.mode]: {...current, active_tool: tool, ...other}};
+      }),
+      'set-option': (option, ...args) => this.setState(state => {
+        console.log(option);
+        const current = state[state.mode];
+        const other = {};
+        if (current.active_option === option) option = null;
+        return {[state.mode]: {...current, active_option: option, ...other}};
+      }),
       'color-swap': (...args) => {
         this.setState(state => {
           const current = state[state.mode];
@@ -124,11 +137,6 @@ class App extends React.Component {
           };
         });
       },
-      'change-color-click': () => {
-        this.setState(state => ({
-          [state.mode]: {...state[state.mode], active_option: 'change-color-click'}
-        }));
-      },
       'change-color': color => {
         this.setState(state => {
           const current = state[state.mode];
@@ -138,11 +146,6 @@ class App extends React.Component {
             [state.mode]: {...current, colors: colors}
           };
         });
-      },
-      'change-color-close': () => {
-        this.setState(state => ({
-          [state.mode]: {...state[state.mode], active_option: null}
-        }));
       },
       'ink-dropper': () => {
         this.setState(state => {
@@ -219,11 +222,11 @@ class App extends React.Component {
               break;
             case 'erase':
               log_change = true;
+              const hexcolors = {...current.hexcolors};
+              delete hexcolors[key];
               return {
                 [state.mode]: {...current,
-                  hexcolors: {...current.hexcolors,
-                    [key]: undefined
-                  }
+                  hexcolors: hexcolors
                 }
               }
             default: break;

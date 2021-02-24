@@ -72,31 +72,45 @@ class DisplayArea extends React.Component {
   }
 
   render() {
-    const hexes = [];
+    let hexOrigin = null;
     if (this.container.current) {
-      if (this.props.mode === 'hex-freestyle') {
-        let width = this.container.current.clientWidth;
-        let height = this.container.current.clientHeight;
-        const pan = this.props.current.pan;
+      if (['hex-freestyle','hex-tessellate'].includes(this.props.mode)) {
+        const hexes = [];
+        const width = this.container.current.clientWidth;
+        const height = this.container.current.clientHeight;
+        let pan = {x: 0, y: 0};
+        if (this.props.mode === 'hex-freestyle') pan = this.props.current.pan;
         const zoom = this.props.current.zoom;
-        let t = (-height / 2 - pan.y) / zoom;
-        let b = (height / 2 - pan.y) / zoom;
-        let l = (-width / 2 - pan.x) / zoom;
-        let r = (width / 2 - pan.x) / zoom;
-        const hexdims = Hexagon.visibleInBox(t,r,b,l);
-        l = hexdims.l;
-        r = hexdims.r;
-        for (let y = hexdims.t, i = 0; y <= hexdims.b; ++y,++i) {
+        const t_px = (-height / 2 - pan.y) / zoom;
+        const b_px = (height / 2 - pan.y) / zoom;
+        const l_px = (-width / 2 - pan.x) / zoom;
+        const r_px = (width / 2 - pan.x) / zoom;
+        const hexgrid = Hexagon.visibleInBox(t_px,r_px,b_px,l_px);
+        const {t,b,lskew,rskew} = hexgrid;
+        let {l,r} = hexgrid;
+        for (let y = t, i = 0; y <= b; ++y,++i) {
           for (let x = l; x <= r; ++x) {
             const key = `${x},${y}`;
-            let color = this.props.current.hexcolors[key];
-            if (color === undefined) color = 'lightgray';
+            let color = 'lightgray';
+            if (this.props.mode === 'hex-freestyle') {
+              if (key in this.props.current.hexcolors)
+                color = this.props.current.hexcolors[key];
+            } else if (this.props.mode === 'hex-tessellate') {
+              if (key in this.props.current.tiledata)
+                color = 'blue';
+            }
             hexes.push(<Hexagon key={key} color={color} x={x} y={y}
               onClick={() => this.props.handleDisplay('hex-click',key)}></Hexagon>);
           }
-          if ((i + hexdims.lskew) % 2) --l;
-          if ((i + hexdims.rskew) % 2) --r;
+          if ((i + lskew) % 2) --l;
+          if ((i + rskew) % 2) --r;
         }
+        const style = {transform: ''};
+        if (this.props.mode === 'hex-freestyle')
+          style.transform += `translate(${this.props.current.pan.x}px,` +
+          `${this.props.current.pan.y}px)`;
+        style.transform += `scale(${this.props.current.zoom})`;
+        hexOrigin = <div className='hexOrigin' draggable={false} style={style}>{hexes}</div>;
       }
     }
     return (
@@ -108,12 +122,7 @@ class DisplayArea extends React.Component {
         onMouseLeave={this.handleMouseLeave}
         onClickCapture={this.handleClickCapture}
       >
-        {this.props.mode === 'hex-freestyle' && <div className='hexOrigin' draggable={false}
-          style={{transform: `translate(${this.props.current.pan.x}px,` +
-            `${this.props.current.pan.y}px)` +
-            `scale(${this.props.current.zoom})`}}>
-          {hexes}
-        </div>}
+        {hexOrigin}
       </div>
     );
   }

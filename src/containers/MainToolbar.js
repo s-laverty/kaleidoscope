@@ -20,7 +20,7 @@ const MainToolbar = props => {
         }
       }
       colors.push(<ToolbarButton key={i}
-        onClick={() => props.handleToolbar('color', i)}
+        onClick={() => props.handleToolbar('set-tool', 'color', i)}
         onDragStart={e => {
           e.dataTransfer.effectAllowed = 'move';
           e.dataTransfer.setData('application/x-kaleidoscope-color', i);
@@ -92,6 +92,10 @@ const MainToolbar = props => {
               props.handleToolbar('remove-color',
                 Number(e.dataTransfer.getData('application/x-kaleidoscope-color')));
             }}
+          />}
+          {props.mode === 'hex-tessellate' && <ToolbarButton
+            text='Tile Shape'
+            onClick={props.handleToolbar('set-tool', 'tile-shape')}
           />}
         </div>
       </div>
