@@ -1,0 +1,93 @@
+.ToolbarDropdown {
+  --transition-length: 0.5s;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--toolbar-background);
+  & > * {
+    flex-shrink: 0;
+  }
+  & > .ToolbarButton:first-child {
+    font-size: 1.3em;
+    height: 100%;
+  }
+  & span.dropdown-icon {
+    display: inline-block;
+    vertical-align: sub;
+    margin-left: .3em;
+    width: 1em;
+    height: 1em;
+    transition: transform var(--transition-length);
+    &::before {
+      content: '';
+      display: block;
+      width: 100%;
+      height: 100%;
+      background-image: url('assets/white-chevron.svg');
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      transform: rotateZ(-90deg);
+    }
+  }
+  & > .drop-list-separator {
+    margin: 0;
+    border: none;
+    background-color: var(--toolbar-background);
+    border-top: .05em solid rgba(255,255,255,.5);
+    transition: opacity var(--transition-length);
+  }
+  & > .drop-list {
+    z-index: -2;
+    padding: 0.1em 0.2em;
+    display: flex;
+    flex-direction: column;
+    background-color: var(--toolbar-background);
+    transition: transform var(--transition-length), opacity var(--transition-length);
+    &[hidden] {
+      display: none;
+    }
+    & > .ToolbarButton {
+      margin: .1em 0;
+    }
+  }
+  &.collapsed {
+    & span.dropdown-icon {
+      transform: scaleY(-1);
+    }
+    & > .drop-list-separator {
+      opacity: 0;
+    }
+    & > .drop-list {
+      transform: translateY(-5em);
+      opacity: 0;
+    }
+  }
+  &.no-tr {
+    & > .drop-list-separator, & > .drop-list {
+      visibility: hidden;
+    }
+  }
+  &.disabled {
+    & > .drop-list-separator, & > .drop-list {
+      transition: none;
+      visibility: hidden;
+    }
+  }
+  &.force-open {
+    & span.dropdown-icon {
+      transform: none;
+    }
+    & > .drop-list-separator {
+      transition: none;
+      opacity: initial;
+      visibility: initial;
+    }
+    & > .drop-list {
+      transition: none;
+      opacity: initial;
+      transform: initial;
+      visibility: initial;
+    }
+  }
+}

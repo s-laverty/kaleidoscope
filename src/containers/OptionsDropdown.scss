@@ -1,0 +1,6 @@
+.OptionsDropdown {
+  width: 7.5em;
+  & .ToolbarButton > input[type=color] {
+    display: none;
+  }
+}
