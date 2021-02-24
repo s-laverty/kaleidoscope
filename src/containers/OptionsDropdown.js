@@ -14,24 +14,25 @@ class OptionsDropdown extends React.Component {
   render() {
     let disabled=false;
     let force_open = false;
+    const current = this.props.current;
     const buttons = [];
-    if (this.props.selected_tool === 'color') {
+    if (current.active_tool === 'color') {
       buttons.push(
         <ToolbarButton key={'change-color'}
           text='Change Color'
           icon={{border: true, src: ColorPickerIcon}}
-          selected={this.props.selected_option === 'change-color'}
+          selected={current.active_option === 'change-color'}
           onClick={() => this.props.handleToolbar('change-color-click')}
         >
           <input type='color' ref={this.color_picker_input}
-            value={this.props.color_picker_value}
+            value={current.color_picker_value}
             onClick={e => e.stopPropagation()}
             onChange={e => this.props.handleToolbar('change-color', e.target.value)}
           />
         </ToolbarButton>,
         <ToolbarButton key={'ink-dropper'}
           text='Ink Dropper'
-          selected={this.props.selected_option === 'ink-dropper'}
+          selected={current.active_option === 'ink-dropper'}
           onClick={() => this.props.handleToolbar('ink-dropper')}
         />,
         <ToolbarButton key={'remove-color'}
@@ -42,8 +43,8 @@ class OptionsDropdown extends React.Component {
           onClick={() => this.props.handleToolbar('remove-color')}
         />
       );
-      if (this.props.selected_option === 'change-color') force_open = true;
-    } else if (this.props.selected_tool === 'erase') {
+      if (current.active_option === 'change-color') force_open = true;
+    } else if (current.active_tool === 'erase') {
       buttons.push(
         <ToolbarButton key={'clear-all'}
           text='Clear All'
@@ -59,7 +60,7 @@ class OptionsDropdown extends React.Component {
         className='OptionsDropdown'
         title='Options'
         collapsed={this.props.collapsed}
-        handleToggle={this.props.handleToggle}
+        handleToggle={() => this.props.handleToolbar('dropdown-toggle', 'options')}
         disabled={disabled}
         force_open={force_open}
       >
@@ -69,7 +70,7 @@ class OptionsDropdown extends React.Component {
   }
 
   componentDidUpdate() {
-    if (this.props.selected_option === 'change-color-click') {
+    if (this.props.current.active_option === 'change-color-click') {
       this.color_picker_input.current.onchange =
         () => this.props.handleToolbar('change-color-close');
       this.color_picker_input.current.click();

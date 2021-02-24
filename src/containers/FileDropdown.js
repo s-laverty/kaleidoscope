@@ -7,30 +7,30 @@ const FileDropdown = props => (
     className='FileDropdown'
     title='File'
     collapsed={props.collapsed}
-    handleToggle={props.handleToggle}
+    handleToggle={() => props.handleToolbar('dropdown-toggle', 'file')}
   >
-    <ToolbarButton key={'load'}
+    <ToolbarButton
       text='Load'
       selected={props.file_operation === 'load'}
       onClick={() => props.handleToolbar('load')}
     />
-    <ToolbarButton key={'save'}
+    <ToolbarButton
       text='Save'
       selected={props.file_operation === 'save'}
       onClick={() => props.handleToolbar('save')}
     />
-    <ToolbarButton key={'undo'}
+    {props.mode === 'hex-freestyle' && <ToolbarButton
       text='Undo'
-      disabled={!props.undo}
+      disabled={props.current.history_index === 0}
       onClick={() => props.handleToolbar('undo')}
       title='Ctrl+z'
-    />
-    <ToolbarButton key={'redo'}
+    />}
+    {props.mode === 'hex-freestyle' && <ToolbarButton
       text='Redo'
-      disabled={!props.redo}
+      disabled={props.current.history_index === props.current.history.length - 1}
       onClick={() => props.handleToolbar('redo')}
       title='Ctrl+y'
-    />
+    />}
   </ToolbarDropdown>
 );
 

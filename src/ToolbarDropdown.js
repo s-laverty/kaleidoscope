@@ -16,7 +16,7 @@ class ToolbarDropdown extends React.Component {
     let className = this.className;
     if (this.props.collapsed) {
       className += ' collapsed';
-      if (!this.state.transitioning) className += ' hidden';
+      if (!this.state.transitioning) className += ' no-tr';
     }
     if (this.props.disabled) className += ' disabled';
     if (this.props.force_open) className += ' force-open';

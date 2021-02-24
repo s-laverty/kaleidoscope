@@ -4,50 +4,289 @@ import DisplayArea from './DisplayArea';
 import MainToolbar from './MainToolbar';
 
 class App extends React.Component {
+  static saved_props = {
+    'hex-freestyle': new Set(['hexcolors','colors','pan','zoom']),
+    'hex-tessellate': new Set()
+  }
+  static default_props = {
+    'hex-freestyle': {
+      hexcolors: {},
+      history: [{hexcolors: {}}],
+      history_index: 0,
+      colors: ['#ff0000','#00ff00','#0000ff'],
+      active_color_index: null,
+      active_tool: null,
+      active_option: null,
+      pan: {x: 0, y: 0},
+      zoom: 1.0
+    },
+    'hex-tessellate': {
+      tiledata: {}
+    }
+  }
+
   constructor() {
     super();
-    const hexdata = {};
-    const colors = ['#ff0000','#00ff00','#0000ff'];
     this.state = {
-      hexdata: hexdata,
-      selected_dropdown: null,
+      active_dropdown: null,
+      mode: 'hex-freestyle',
       file_operation: null,
-      selected_option: null,
-      selected_tool: null,
-      colors: colors,
-      selected_color_index: null,
-      history: [{hexdata: hexdata}],
-      history_index: 0
+      ...App.default_props
+    };
+    this._toolbar_handlers = {
+      'dropdown-toggle': dropdown => {
+        this.setState(state => {
+          if (state.mode === 'hex-freestyle'
+          && state['hex-freestyle'].active_option === 'change-color'
+          && !state.active_dropdown) return;
+          return {
+            active_dropdown: (state.active_dropdown === dropdown ? null : dropdown),
+            active_option: null
+          };
+        });
+      },
+      'mode-switch': mode => this.setState({mode: mode}),
+      'load': () => this.setState({file_operation: 'load'}),
+      'load-from-text': file_text => this.loadFromText(file_text),
+      'save': () => {
+        this.setState({file_operation: 'save'});
+      },
+      'get-save-uri': () => this.getSaveURI(),
+      'file-operation-close': () => {
+        this.setState({file_operation: null});
+      },
+      'undo': () => {
+        this.setState(state => {
+          const current = state[state.mode];
+          if (current.history_index) {
+            return {
+              [state.mode]: {...current,
+                history_index: current.history_index - 1,
+                ...current.history[current.history_index - 1]
+              }
+            };
+          }
+        });
+      },
+      'redo': () => {
+        this.setState(state => {
+          const current = state[state.mode];
+          if (current.history && current.history.length > current.history_index + 1) {
+            return {
+              [state.mode]: {...current,
+                history_index: current.history_index + 1,
+                ...current.history[current.history_index + 1]
+              }
+            };
+          }
+        });
+      },
+      'color': i => {
+        this.setState(state => ({
+          [state.mode]: {...state[state.mode],
+            active_tool: 'color',
+            active_color_index: i
+          }
+        }));
+      },
+      'color-swap': (...args) => {
+        this.setState(state => {
+          const current = state[state.mode];
+          let [i,j] = args.sort();
+          let active_color_index = current.active_color_index;
+          if (active_color_index === i) active_color_index = j;
+          else if (active_color_index === j) active_color_index = i;
+          const colors = current.colors.slice();
+          let temp = colors[i];
+          colors[i] = colors[j];
+          colors[j] = temp;
+          return {
+            [state.mode]: {...current,
+              active_color_index: active_color_index,
+              colors: colors
+            }
+          };
+        });
+      },
+      'add-color': () => {
+        this.setState(state => {
+          const current = state[state.mode];
+          const new_color = `#${Math.floor(Math.random()*(1<<(8*3))).toString(16).padStart(6,'0')}`;
+          const colors = current.colors.slice();
+          colors.push(new_color);
+          return {
+            [state.mode]: {...current,
+              active_tool: 'color',
+              active_option: 'change-color-click',
+              colors: colors,
+              active_color_index: current.colors.length
+            }
+          };
+        });
+      },
+      'change-color-click': () => {
+        this.setState(state => ({
+          [state.mode]: {...state[state.mode], active_option: 'change-color-click'}
+        }));
+      },
+      'change-color': color => {
+        this.setState(state => {
+          const current = state[state.mode];
+          const colors = current.colors.slice();
+          colors[current.active_color_index] = color;
+          return {
+            [state.mode]: {...current, colors: colors}
+          };
+        });
+      },
+      'change-color-close': () => {
+        this.setState(state => ({
+          [state.mode]: {...state[state.mode], active_option: null}
+        }));
+      },
+      'ink-dropper': () => {
+        this.setState(state => {
+          const current = state[state.mode];
+          let active_option = 'ink-dropper';
+          if (current.active_option === active_option) active_option = null;
+          return {
+            [state.mode]: {...current, active_option: active_option}
+          };
+        });
+      },
+      'remove-color': i => {
+        this.setState(state => {
+          const current = state[state.mode];
+          let active_color_index = current.active_color_index;
+          if (i === undefined) i = active_color_index;
+          if (i === active_color_index) active_color_index = null;
+          else if (i < active_color_index) --active_color_index;
+          const colors = current.colors.slice(0, i).concat(
+            current.colors.slice(i + 1));
+          return {
+            [state.mode]: {...current,
+              active_tool: null,
+              colors: colors,
+              active_color_index: active_color_index
+            }
+          };
+        });
+      },
+      'erase': () => {
+        this.setState(state => ({
+          [state.mode]: {...state[state.mode],
+            active_tool: 'erase',
+            active_color_index: null
+          }
+        }));
+      },
+      'clear-all': () => {
+        if (window.confirm('Are you sure you want to clear everything?')) {
+          this.setState(state => ({
+            [state.mode]: {...state[state.mode], hexcolors: {}}
+          }));
+        }
+      }
+    };
+    this._display_handlers = {
+      'hex-click': key => {
+        let log_change = false;
+        this.setState(state => {
+          const current = state[state.mode];
+          switch (current.active_tool) {
+            case 'color':
+              if (current.active_option === 'ink-dropper') {
+                if (current.hexcolors[key]) {
+                  const colors = current.colors.slice();
+                  colors[current.active_color_index] = current.hexcolors[key];
+                  return {
+                    [state.mode]: {...current,
+                      active_option: null,
+                      colors: colors
+                    }
+                  }
+                }
+              } else {
+                log_change = true;
+                return {
+                  [state.mode]: {...current,
+                    hexcolors: {...current.hexcolors,
+                      [key]: current.colors[current.active_color_index]
+                    }
+                  }
+                }
+              }
+              break;
+            case 'erase':
+              log_change = true;
+              return {
+                [state.mode]: {...current,
+                  hexcolors: {...current.hexcolors,
+                    [key]: undefined
+                  }
+                }
+              }
+            default: break;
+          }
+        }, () => log_change && this.saveState());
+      },
+      'pan': (dx,dy) => this.setState(state => {
+        const current = state[state.mode];
+        return {
+          [state.mode]: {...current,
+            pan: {x: current.pan.x + dx, y: current.pan.y + dy}
+          }
+        };
+      }),
+      'zoom': zoom => this.setState(state => {
+        const current = state[state.mode];
+        const ratio = zoom / current.zoom;
+        return {
+          [state.mode]: {...current,
+            pan: {x: current.pan.x * ratio, y: current.pan.y * ratio},
+            zoom: zoom
+          }
+        };
+      })
     };
     this.handleClick = this.handleClick.bind(this);
     this.handleKeyDown = this.handleKeyDown.bind(this);
-    this.handleHexClick = this.handleHexClick.bind(this);
+    this.handleDisplay = this.handleDisplay.bind(this);
     this.handleToolbar = this.handleToolbar.bind(this);
-    this.loadFileText = this.loadFileText.bind(this);
-    this.getDownloadURI = this.getDownloadURI.bind(this);
   }
 
   saveState() {
     this.setState(state => {
-      const current = {
-        hexdata: state.hexdata
-      };
-      const previous = state.history[state.history_index];
-      if (Object.entries(current).every(([key,val]) => val === previous[key])) return;
-      const start = Math.max(state.history_index-(200-2), 0);
-      const new_history = state.history.slice(start,state.history_index+1);
-      new_history.push(current);
-      return {history: new_history, history_index: new_history.length-1};
+      if (state.mode === 'hex-freestyle') {
+        const current = state['hex-freestyle'];
+        const next = {
+          hexcolors: current.hexcolors
+        };
+        const previous = current.history[current.history_index];
+        if (Object.entries(next).every(([key,val]) => val === previous[key])) return;
+        const start = Math.max(current.history_index-(200-2), 0);
+        const history = current.history.slice(start,current.history_index+1);
+        history.push(next);
+        return {
+          'hex-freestyle': {...current,
+            history: history,
+            history_index: history.length - 1
+          }
+        };
+      }
     });
   }
 
   handleClick() {
     this.setState(state => {
-      if (state.selected_option === 'change-color') {
-        this.saveState();
-        return {selected_option: null};
-      }
-    }, this.saveState);
+      const current = state[state.mode];
+      if (current.active_option === 'change-color')
+        return {
+          [state.mode]: {...current,
+            active_option: null
+          }
+        };
+    });
   }
 
   handleKeyDown(e) {
@@ -57,195 +296,86 @@ class App extends React.Component {
     }
   }
 
-  handleHexClick(x,y) {
-    const key = `${x},${y}`;
-    const type = this.state.selected_tool;
-    if (type === 'color') {
-      if (this.state.selected_option === 'ink-dropper')
-        this.setState(state => {
-          if (state.hexdata[key]) {
-            const new_colors = state.colors.slice();
-            new_colors[state.selected_color_index] = state.hexdata[key];
-            return {
-              selected_option: null,
-              colors: new_colors
-            };
-          }
-        });
-      else
-        this.setState(state => ({
-          selected_tool: 'color',
-          hexdata: {...state.hexdata,
-            [key]: state.colors[state.selected_color_index]
-          }
-        }));
-    } else if (type === 'erase') {
-      this.setState(state => ({
-        hexdata: {...state.hexdata,
-          [key]: undefined
-        }
-      }));
+  handleDisplay(type, ...args) {
+    const handler = this._display_handlers[type];
+    if (handler === undefined) {
+      console.warn(`Unrecognized display action: ${type}`);
+      return;
     }
-    this.saveState();
+    return handler(...args);
   }
+
   handleToolbar(type, ...args) {
-    if (type === 'dropdown-toggle') {
-      this.setState(state => {
-        if (state.selected_option === 'change-color' && !state.selected_dropdown) return;
-        return {
-          selected_dropdown: (state.selected_dropdown === args[0] ? null : args[0]),
-          selected_option: null
-        };
-      });
-    } else if (type === 'load') {
-      this.setState({file_operation: 'load'});
-    } else if (type === 'save') {
-      this.setState({file_operation: 'save'});
-    } else if (type === 'file-operation-close') {
-      this.setState({file_operation: null});
-    } else if (type === 'undo') {
-      this.setState(state => {
-        if (state.history_index) {
-          return {...state.history[state.history_index-1],
-            history_index: state.history_index - 1
-          };
-        }
-      });
-    } else if (type === 'redo') {
-      this.setState(state => {
-        if (state.history.length > state.history_index + 1)
-          return {...state.history[state.history_index+1],
-            history_index: state.history_index + 1
-          };
-      });
-    } else if (type === 'color') {
-      this.setState({
-        selected_tool: 'color',
-        selected_color_index: args[0]
-      });
-    } else if (type === 'color-swap') {
-      this.setState(state => {
-        let [i,j] = args.sort();
-        let selected_color_index = state.selected_color_index;
-        if (selected_color_index === i) selected_color_index = j;
-        else if (selected_color_index === j) selected_color_index = i;
-        const colors = state.colors.slice();
-        let temp = colors[i];
-        colors[i] = colors[j];
-        colors[j] = temp;
-        return {
-          selected_color_index: selected_color_index,
-          colors: colors
-        }
-      })
-    } else if (type === 'add-color') {
-      this.setState(state => {
-        let new_color = `#${Math.floor(Math.random()*(1<<(8*3))).toString(16).padStart(6,'0')}`;
-        let l = state.colors.length;
-        let new_colors = state.colors.slice();
-        new_colors.push(new_color);
-        return {
-          selected_tool: 'color',
-          selected_option: 'change-color-click',
-          colors: new_colors,
-          selected_color_index: l
-        };
-      });
-    } else if (type === 'change-color-click') {
-      this.setState({selected_option: 'change-color-click'});
-    } else if (type === 'change-color') {
-      this.setState(state => {
-        const new_colors = state.colors.slice();
-        new_colors[state.selected_color_index] = args[0];
-        return {colors: new_colors};
-      });
-    } else if (type === 'change-color-close') {
-      this.setState({selected_option: null});
-    } else if (type === 'ink-dropper') {
-      this.setState(state => ({
-        selected_option: (state.selected_option === 'ink-dropper' ? null : 'ink-dropper')
-      }));
-    } else if (type === 'remove-color') {
-      this.setState(state => {
-        const new_colors = state.colors.slice(0,state.selected_color_index).concat(
-          state.colors.slice(state.selected_color_index+1));
-        return {
-          selected_tool: null,
-          colors: new_colors,
-          selected_color_index: null
-        }
-      });
-    } else if (type === 'erase') {
-      this.setState({
-        selected_tool: 'erase',
-        selected_color_index: null
-      });
-    } else if (type === 'clear-all') {
-      if (window.confirm('Are you sure you want to clear everything?')) {
-        this.setState({hexdata: {}});
-      }
-    } else console.warn(`Unrecognized toolbar command: ${type}`);
+    const handler = this._toolbar_handlers[type];
+    if (handler === undefined) {
+      console.warn(`Unrecognized toolbar action: ${type}`);
+      return;
+    }
+    return handler(...args);
   }
 
-  getDownloadURI() {
-    return encodeURIComponent(JSON.stringify({
-      hexdata: this.state.hexdata,
-      colors: this.state.colors
-    }));
+  getSaveURI() {
+    const save_state = {mode: this.state.mode};
+    const current = this.state[this.state.mode];
+    App.saved_props[this.state.mode].forEach(key => save_state[key] = current[key]);
+    return encodeURIComponent(JSON.stringify(save_state));
   }
 
-  loadFileText(file_text) {
+  loadFromText(file_text) {
     let result;
     try {
       result = JSON.parse(file_text);
     } catch (e) {
-      return false;
+      return 'invalid';
     }
-    const valid_props = new Set(['hexdata', 'colors']);
+    if (result.mode !== this.state.mode) return 'wrong-mode';
+    delete result.mode;
+    const valid_props = new Set(App.saved_props[this.state.mode]);
     for (let prop in result) {
-      if (!valid_props.has(prop)) return false;
+      if (!valid_props.has(prop)) return 'invalid';
       valid_props.delete(prop);
     }
-    if (valid_props.size) return false;
+    if (valid_props.size) return 'invalid';
     if (window.confirm('Are you sure you want to load this file? All unsaved changes will be lost.')) {
       this.setState({...result,
-        history: [{hexdata: result.hexdata}],
-        history_index: 0,
-        selected_dropdown: null,
-        selected_tool: null,
-        selected_color_index: null
+        [this.state.mode]: {...App.default_props[this.state.mode], ...result}
       });
+      return 'success';
     }
-    return true;
+    return 'user-cancel';
   }
 
   render() {
     return (
       <div className='App' onClick={this.handleClick}>
         <DisplayArea
-          hexdata={this.state.hexdata}
-          handleHexClick={this.handleHexClick}
+          mode={this.state.mode}
+          current={this.state[this.state.mode]}
+          handleDisplay={this.handleDisplay}
         />
         <MainToolbar
-          selected_dropdown={this.state.selected_dropdown}
+          mode={this.state.mode}
+          current={this.state[this.state.mode]}
           file_operation={this.state.file_operation}
-          undo={this.state.history_index}
-          redo={this.state.history.length - this.state.history_index - 1}
-          selected_option={this.state.selected_option}
-          selected_tool={this.state.selected_tool}
-          colors={this.state.colors}
-          selected_color_index={this.state.selected_color_index}
+          active_dropdown={this.state.active_dropdown}
           handleToolbar={this.handleToolbar}
-          getDownloadURI={this.getDownloadURI}
-          loadFileText={this.loadFileText}
         />
       </div>
     );
   }
   componentDidUpdate() {
-    if (this.state.selected_option === 'change-color-click') {
-      this.setState({selected_option: 'change-color'});
-    }
+    this.setState(state => {
+      if (state.mode === 'hex-freestyle') {
+        const current = state['hex-freestyle'];
+        if (current.active_option === 'change-color-click') {
+          return {
+            'hex-freestyle': {...current,
+              active_option: 'change-color'
+            }
+          };
+        }
+      }
+    });
   }
   componentDidMount() {
     window.addEventListener('keydown', this.handleKeyDown);

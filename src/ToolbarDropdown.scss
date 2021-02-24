@@ -44,6 +44,9 @@
     flex-direction: column;
     background-color: var(--toolbar-background);
     transition: transform var(--transition-length), opacity var(--transition-length);
+    &[hidden] {
+      display: none;
+    }
     & > .ToolbarButton {
       margin: .1em 0;
     }
@@ -60,7 +63,7 @@
       opacity: 0;
     }
   }
-  &.hidden {
+  &.no-tr {
     & > .drop-list-separator, & > .drop-list {
       visibility: hidden;
     }

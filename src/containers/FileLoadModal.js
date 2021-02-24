@@ -11,6 +11,7 @@ class FileLoadModal extends React.Component {
       is_loading: false,
       is_invalid: false
     }
+    this.handleClose = () => props.handleToolbar('file-operation-close');
     this.handleChange = this.handleChange.bind(this);
     this.handleSubmit = this.handleSubmit.bind(this);
   }
@@ -28,10 +29,19 @@ class FileLoadModal extends React.Component {
       const file = this.file_input.current.files[0];
       const reader = new FileReader();
       reader.onloadend = () => {
-        if (this.props.loadFileText(reader.result)) {
-          this.props.handleClose();
-        } else {
-          this.setState({is_loading: false, is_invalid: true});
+        const result = this.props.handleToolbar('load-from-text', reader.result);
+        switch(result) {
+          case 'success':
+            this.handleClose();
+            this.props.handleToolbar('dropdown-toggle', null);
+            break;
+          case 'user-cancel':
+            this.setState({is_loading: false});
+            break;
+          case 'invalid':
+            this.setState({is_loading: false, is_invalid: true});
+            break;
+          default: console.warn(`FileLoadModal: Unrecognized file load result "${result}"`);
         }
       }
       reader.readAsText(file);
@@ -41,8 +51,8 @@ class FileLoadModal extends React.Component {
   render() {
     return (
       <Modal
-      title='Load File'
-      handleClose={this.props.handleClose}
+        title='Load File'
+        handleClose={() => this.handleClose()}
       >
         <div className='FileLoadModal flex-center'>
           <div className='content'>
@@ -66,6 +76,10 @@ class FileLoadModal extends React.Component {
         </div>
       </Modal>
     );
+  }
+
+  componentDidMount() {
+    this.file_input.current.focus();
   }
 }
 

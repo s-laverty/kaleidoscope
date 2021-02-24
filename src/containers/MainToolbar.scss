@@ -1,7 +1,6 @@
 .MainToolbar {
   display: flex;
   flex-direction: row;
-  flex-wrap: wrap;
   font-size: calc(max(0.7em, 1.1vw));
   color: white;
   &::before {
@@ -46,6 +45,7 @@
 }
 @media screen and (max-width: 40rem) {
   .MainToolbar {
+    flex-wrap: wrap;
     & > span.title {
       width: 100%;
     }
