@@ -33,7 +33,7 @@ class OptionsDropdown extends React.Component {
         <ToolbarButton key={'ink-dropper'}
           text='Ink Dropper'
           selected={current.active_option === 'ink-dropper'}
-          onClick={() => this.props.handleToolbar('ink-dropper')}
+          onClick={() => this.props.handleToolbar('set-option', 'ink-dropper')}
         />,
         <ToolbarButton key={'remove-color'}
           text='Remove Color'
@@ -72,7 +72,7 @@ class OptionsDropdown extends React.Component {
   componentDidUpdate() {
     if (this.props.current.active_option === 'change-color-click') {
       this.color_picker_input.current.onchange =
-        () => this.props.handleToolbar('set-option', 'change-color');
+        () => this.props.handleToolbar('set-option', null);
       this.color_picker_input.current.click();
     }
   }

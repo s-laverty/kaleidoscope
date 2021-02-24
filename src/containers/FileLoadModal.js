@@ -11,7 +11,7 @@ class FileLoadModal extends React.Component {
       is_loading: false,
       is_invalid: false
     }
-    this.handleClose = () => props.handleToolbar('file-operation-close');
+    this.handleClose = () => props.handleToolbar('set-file-operation', null);
     this.handleChange = this.handleChange.bind(this);
     this.handleSubmit = this.handleSubmit.bind(this);
   }

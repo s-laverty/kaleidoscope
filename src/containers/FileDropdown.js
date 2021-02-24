@@ -12,12 +12,12 @@ const FileDropdown = props => (
     <ToolbarButton
       text='Load'
       selected={props.file_operation === 'load'}
-      onClick={() => props.handleToolbar('load')}
+      onClick={() => props.handleToolbar('set-file-operation', 'load')}
     />
     <ToolbarButton
       text='Save'
       selected={props.file_operation === 'save'}
-      onClick={() => props.handleToolbar('save')}
+      onClick={() => props.handleToolbar('set-file-operation', 'save')}
     />
     {props.mode === 'hex-freestyle' && <ToolbarButton
       text='Undo'

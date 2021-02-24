@@ -46,16 +46,10 @@ class App extends React.Component {
           };
         });
       },
-      'mode-switch': mode => this.setState({mode: mode}),
-      'load': () => this.setState({file_operation: 'load'}),
+      'set-mode': mode => this.setState({mode: mode}),
+      'set-file-operation': operation => this.setState({file_operation: operation}),
       'load-from-text': file_text => this.loadFromText(file_text),
-      'save': () => {
-        this.setState({file_operation: 'save'});
-      },
       'get-save-uri': () => this.getSaveURI(),
-      'file-operation-close': () => {
-        this.setState({file_operation: null});
-      },
       'undo': () => {
         this.setState(state => {
           const current = state[state.mode];
@@ -102,41 +96,37 @@ class App extends React.Component {
         if (current.active_option === option) option = null;
         return {[state.mode]: {...current, active_option: option, ...other}};
       }),
-      'color-swap': (...args) => {
-        this.setState(state => {
-          const current = state[state.mode];
-          let [i,j] = args.sort();
-          let active_color_index = current.active_color_index;
-          if (active_color_index === i) active_color_index = j;
-          else if (active_color_index === j) active_color_index = i;
-          const colors = current.colors.slice();
-          let temp = colors[i];
-          colors[i] = colors[j];
-          colors[j] = temp;
-          return {
-            [state.mode]: {...current,
-              active_color_index: active_color_index,
-              colors: colors
-            }
-          };
-        });
-      },
-      'add-color': () => {
-        this.setState(state => {
-          const current = state[state.mode];
-          const new_color = `#${Math.floor(Math.random()*(1<<(8*3))).toString(16).padStart(6,'0')}`;
-          const colors = current.colors.slice();
-          colors.push(new_color);
-          return {
-            [state.mode]: {...current,
-              active_tool: 'color',
-              active_option: 'change-color-click',
-              colors: colors,
-              active_color_index: current.colors.length
-            }
-          };
-        });
-      },
+      'swap-colors': (...args) => this.setState(state => {
+        const current = state[state.mode];
+        let [i,j] = args.sort();
+        let active_color_index = current.active_color_index;
+        if (active_color_index === i) active_color_index = j;
+        else if (active_color_index === j) active_color_index = i;
+        const colors = current.colors.slice();
+        let temp = colors[i];
+        colors[i] = colors[j];
+        colors[j] = temp;
+        return {
+          [state.mode]: {...current,
+            active_color_index: active_color_index,
+            colors: colors
+          }
+        };
+      }),
+      'add-color': () => this.setState(state => {
+        const current = state[state.mode];
+        const new_color = `#${Math.floor(Math.random()*(1<<(8*3))).toString(16).padStart(6,'0')}`;
+        const colors = current.colors.slice();
+        colors.push(new_color);
+        return {
+          [state.mode]: {...current,
+            active_tool: 'color',
+            active_option: 'change-color-click',
+            colors: colors,
+            active_color_index: current.colors.length
+          }
+        };
+      }),
       'change-color': color => {
         this.setState(state => {
           const current = state[state.mode];
@@ -144,16 +134,6 @@ class App extends React.Component {
           colors[current.active_color_index] = color;
           return {
             [state.mode]: {...current, colors: colors}
-          };
-        });
-      },
-      'ink-dropper': () => {
-        this.setState(state => {
-          const current = state[state.mode];
-          let active_option = 'ink-dropper';
-          if (current.active_option === active_option) active_option = null;
-          return {
-            [state.mode]: {...current, active_option: active_option}
           };
         });
       },
@@ -174,14 +154,6 @@ class App extends React.Component {
             }
           };
         });
-      },
-      'erase': () => {
-        this.setState(state => ({
-          [state.mode]: {...state[state.mode],
-            active_tool: 'erase',
-            active_color_index: null
-          }
-        }));
       },
       'clear-all': () => {
         if (window.confirm('Are you sure you want to clear everything?')) {

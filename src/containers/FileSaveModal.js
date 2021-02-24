@@ -9,7 +9,7 @@ class FileSaveModal extends React.Component {
       fileURI: null,
       will_download: false
     }
-    this.handleClose = () => props.handleToolbar('file-operation-close');
+    this.handleClose = () => props.handleToolbar('set-file-operation', null);
     this.filename_input = React.createRef();
     this.download_link = React.createRef();
   }

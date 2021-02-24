@@ -29,7 +29,7 @@ const MainToolbar = props => {
         onDragOver={checkDrop}
         onDrop={e => {
           e.preventDefault();
-          props.handleToolbar('color-swap', i,
+          props.handleToolbar('swap-colors', i,
             Number(e.dataTransfer.getData('application/x-kaleidoscope-color')));
         }}
         selected={props.current.active_color_index === i}
@@ -78,7 +78,7 @@ const MainToolbar = props => {
               style: {backgroundColor: 'white'}
             }}
             selected={props.current.active_tool === 'erase'}
-            onClick={() => props.handleToolbar('erase')}
+            onClick={() => props.handleToolbar('set-tool', 'erase')}
             onDragEnter={e => {
               if (e.dataTransfer.types.includes('application/x-kaleidoscope-color'))
                 e.preventDefault();
