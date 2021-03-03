@@ -93,9 +93,26 @@ const MainToolbar = props => {
                 Number(e.dataTransfer.getData('application/x-kaleidoscope-color')));
             }}
           />}
+          {props.mode === 'hex-freestyle' && <ToolbarButton
+            text='Undo'
+            disabled={props.current.history_index === 0}
+            onClick={() => props.handleToolbar('undo')}
+            title='Ctrl+z'
+          />}
+          {props.mode === 'hex-freestyle' && <ToolbarButton
+            text='Redo'
+            disabled={props.current.history_index === props.current.history.length - 1}
+            onClick={() => props.handleToolbar('redo')}
+            title='Ctrl+y'
+          />}
           {props.mode === 'hex-tessellate' && <ToolbarButton
             text='Tile Shape'
-            onClick={props.handleToolbar('set-tool', 'tile-shape')}
+            selected={props.current.active_tool === 'tile-shape'}
+            onClick={() => props.handleToolbar('set-tool', 'tile-shape')}
+          />}
+          {props.mode === 'hex-tessellate' && <ToolbarButton
+            text='Tessellate!'
+            onClick={() => props.handleToolbar('tessellate')}
           />}
         </div>
       </div>

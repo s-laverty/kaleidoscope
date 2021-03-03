@@ -26,7 +26,7 @@ class Hexagon extends React.Component {
       rskew: Math.abs(rdiff+1) % 2
     };
   }
-
+  
   shouldComponentUpdate(newProps) {
     return this.props.color !== newProps.color;
   }
@@ -37,9 +37,15 @@ class Hexagon extends React.Component {
       this.props.y*hexconst.xdiameter/2}px,` +
       `${this.props.y*hexconst.ydiameter}px)`;
     return (
-      <div className='Hexagon'
+      <div className='Hexagon' draggable={false}
       style={{transform: transform, backgroundColor: this.props.color}}
-      onClick={() => this.props.onClick(this.props.x, this.props.y)}></div>
+      onClick={this.props.onClick}
+      onMouseOver={e => {
+        if (e.buttons === 1 && !e.shiftKey) this.props.onClick();
+      }}
+      onMouseDown={e => {
+        if (!e.shiftKey) this.props.onClick();
+      }}/>
     );
   }
 }

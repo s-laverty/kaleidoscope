@@ -22,6 +22,8 @@ class App extends React.Component {
     },
     'hex-tessellate': {
       tiledata: {},
+      translate: null,
+      active_tool: null,
       zoom: 1.0
     }
   }
@@ -79,18 +81,15 @@ class App extends React.Component {
       'set-tool': (tool, ...args) => this.setState(state => {
         const current = state[state.mode];
         const other = {};
+        if ('active_color_index' in current) other.active_color_index = null;
         if (tool === 'color') {
           const i = args[0];
-          other.active_color_index = i;
-          if (current.active_color_index === i) {
-            other.active_color_index = null;
-            tool = null;
-          }
+          if (current.active_color_index === i) tool = null;
+          else other.active_color_index = i;
         } else if (current.active_tool === tool) tool = null;
         return {[state.mode]: {...current, active_tool: tool, ...other}};
       }),
       'set-option': (option, ...args) => this.setState(state => {
-        console.log(option);
         const current = state[state.mode];
         const other = {};
         if (current.active_option === option) option = null;
@@ -161,32 +160,34 @@ class App extends React.Component {
             [state.mode]: {...state[state.mode], hexcolors: {}}
           }));
         }
-      }
+      },
+      'tessellate': () => this.tessellate()
     };
     this._display_handlers = {
-      'hex-click': key => {
+      'hex-click': (key, ...args) => {
         let log_change = false;
         this.setState(state => {
           const current = state[state.mode];
           switch (current.active_tool) {
             case 'color':
               if (current.active_option === 'ink-dropper') {
-                if (current.hexcolors[key]) {
-                  const colors = current.colors.slice();
+                const colors = current.colors.slice();
+                if (current.hexcolors[key])
                   colors[current.active_color_index] = current.hexcolors[key];
-                  return {
-                    [state.mode]: {...current,
-                      active_option: null,
-                      colors: colors
-                    }
+                return {
+                  [state.mode]: {...current,
+                    active_option: null,
+                    colors: colors
                   }
                 }
               } else {
-                log_change = true;
-                return {
-                  [state.mode]: {...current,
-                    hexcolors: {...current.hexcolors,
-                      [key]: current.colors[current.active_color_index]
+                if (current.hexcolors[key] !== current.colors[current.active_color_index]) {
+                  log_change = true;
+                  return {
+                    [state.mode]: {...current,
+                      hexcolors: {...current.hexcolors,
+                        [key]: current.colors[current.active_color_index]
+                      }
                     }
                   }
                 }
@@ -201,6 +202,15 @@ class App extends React.Component {
                   hexcolors: hexcolors
                 }
               }
+            case 'tile-shape':
+              if (!(key in current.tiledata)) {
+                return {
+                  [state.mode]: {...current,
+                    tiledata: {...current.tiledata, [key]: {x: args[0], y: args[1]}}
+                  }
+                }
+              }
+              break;
             default: break;
           }
         }, () => log_change && this.saveState());
@@ -216,11 +226,13 @@ class App extends React.Component {
       'zoom': zoom => this.setState(state => {
         const current = state[state.mode];
         const ratio = zoom / current.zoom;
+        let other = {};
+        if ('pan' in current) other.pan = {
+          x: current.pan.x * ratio,
+          y: current.pan.y * ratio
+        }
         return {
-          [state.mode]: {...current,
-            pan: {x: current.pan.x * ratio, y: current.pan.y * ratio},
-            zoom: zoom
-          }
+          [state.mode]: {...current, zoom: zoom, ...other}
         };
       })
     };
@@ -318,6 +330,52 @@ class App extends React.Component {
       return 'success';
     }
     return 'user-cancel';
+  }
+
+  tessellate() {
+    const coordEqual = (p1,p2) => p1.x === p2.x && p1.y === p2.y;
+    const hasOverlap = (tile1, tile2, translate={x:0, y:0}) => {
+      for (let p2 of Object.values(tile2)) {
+        p2 = {...p2};
+        p2.x += translate.x;
+        p2.y += translate.y;
+        for (let p1 of Object.values(tile1)) {
+          if (coordEqual(p1, p2)) return true;
+        }
+      }
+      return false;
+    }
+    const current = this.state[this.state.mode];
+    const tiledata = current.tiledata;
+    let translateX = 1;
+    while (hasOverlap(tiledata, tiledata, {x: translateX, y: 0})) ++translateX;
+    this.setState(state => ({
+      [state.mode]: {...current, translate: {x: translateX, y: 0}}
+    }));
+    const moves = [
+      {x: 1, y: 0},
+      {x: 0, y: 1},
+      {x: -1, y: 1},
+      {x: -1, y: 0},
+      {x: 0, y: -1},
+      {x: 1, y: -1}
+    ];
+    let previous = 1;
+    window.setInterval(() => {
+      const current = this.state[this.state.mode];
+      for (let i = (previous + 1) % 6; true; i = (i+5) % 6) {
+        const new_translate = {...current.translate};
+        new_translate.x += moves[i].x;
+        new_translate.y += moves[i].y;
+        if (!hasOverlap(tiledata, tiledata, new_translate)) {
+          previous = i;
+          this.setState(state => ({
+            [state.mode]: {...current, translate: new_translate}
+          }));
+          break;
+        }
+      }
+    }, 1000);
   }
 
   render() {

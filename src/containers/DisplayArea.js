@@ -6,69 +6,73 @@ class DisplayArea extends React.Component {
   constructor(props) {
     super(props);
     this.container = React.createRef();
+    this.state = {
+      dragFrom: null,
+      shiftKey: false,
+      panning: false
+    }
     /* Bind event handlers */
     this.handleResize = this.handleResize.bind(this);
+    this.handleKeyEvent = this.handleKeyEvent.bind(this);
     this.handleWheel = this.handleWheel.bind(this);
     this.handleMouseMove = this.handleMouseMove.bind(this);
     this.handleMouseDown = this.handleMouseDown.bind(this);
-    this.handleMouseUp = this.handleMouseUp.bind(this);
-    this.handleMouseLeave = this.handleMouseLeave.bind(this);
     this.handleClickCapture = this.handleClickCapture.bind(this);
-    /* Add dragging variables */
-    this.mousedown = false;
-    this.dragging = false;
-    this.dragFrom = null;
   }
 
   handleResize() {
     this.forceUpdate();
   }
 
+  handleKeyEvent(e) {
+    this.setState({shiftKey: e.shiftKey});
+  }
+
   handleWheel(e) {
-    if (this.props.mode === 'hex-freestyle') {
-      
-    }
     let zoom = Math.max(0.2, this.props.current.zoom - 0.005*e.deltaY);
     this.props.handleDisplay('zoom', zoom);
   }
 
   handleMouseMove(e) {
-    if (this.mousedown) {
-      this.dragging = true;
-      const dx = e.pageX - this.dragFrom.x;
-      const dy = e.pageY - this.dragFrom.y;
-      this.dragFrom = {x: e.pageX, y: e.pageY};
-      this.props.handleDisplay('pan', dx, dy);
+    if (this.props.mode === 'hex-freestyle') {
+      let panning = false;
+      if (e.buttons === 1) {
+        if (e.shiftKey) {
+          panning = true;
+          const dx = e.pageX - this.state.dragFrom.x;
+          const dy = e.pageY - this.state.dragFrom.y;
+          this.props.handleDisplay('pan', dx, dy);
+        }
+      }
+      this.setState({
+        panning: panning,
+        dragFrom: {x: e.pageX, y: e.pageY}
+      });
     }
   }
 
   handleMouseDown(e) {
-    this.mousedown = true;
-    this.dragFrom = {x: e.pageX, y: e.pageY};
-  }
-
-  handleMouseUp(e) {
-    this.mousedown = false;
-  }
-
-  handleMouseLeave() {
-    this.mousedown = false;
+    this.setState({dragFrom: {x: e.pageX, y: e.pageY}});
   }
 
   handleClickCapture(e) {
-    if (this.dragging) {
+    if (this.state.panning) {
       e.stopPropagation();
-      this.dragging = false;
+      this.setState({panning: false});
     }
   }
 
   componentDidMount() {
     window.addEventListener('resize', this.handleResize);
+    window.addEventListener('keydown', this.handleKeyEvent);
+    window.addEventListener('keyup', this.handleKeyEvent);
     this.handleResize();
   }
 
   componentWillUnmount() {
     window.removeEventListener('resize', this.handleResize);
+    window.removeEventListener('keydown', this.handleKeyEvent);
+    window.removeEventListener('keyup', this.handleKeyEvent);
   }
 
   render() {
@@ -96,11 +100,17 @@ class DisplayArea extends React.Component {
               if (key in this.props.current.hexcolors)
                 color = this.props.current.hexcolors[key];
             } else if (this.props.mode === 'hex-tessellate') {
+              const translate = this.props.current.translate;
               if (key in this.props.current.tiledata)
                 color = 'blue';
+              else if (translate) {
+                const tile_key = `${x-translate.x},${y-translate.y}`;
+                if (tile_key in this.props.current.tiledata)
+                  color = 'orange';
+              }
             }
             hexes.push(<Hexagon key={key} color={color} x={x} y={y}
-              onClick={() => this.props.handleDisplay('hex-click',key)}></Hexagon>);
+              onClick={() => this.props.handleDisplay('hex-click', key, x, y)}/>);
           }
           if ((i + lskew) % 2) --l;
           if ((i + rskew) % 2) --r;
@@ -113,13 +123,15 @@ class DisplayArea extends React.Component {
         hexOrigin = <div className='hexOrigin' draggable={false} style={style}>{hexes}</div>;
       }
     }
+    let className = 'DisplayArea flex-center';
+    if (this.props.mode === 'hex-freestyle' && this.state.shiftKey)
+      className += ' move-cursor';
     return (
-      <div className='DisplayArea flex-center' ref={this.container}
+      <div className={className} ref={this.container}
+        draggable={false}
         onWheel={this.handleWheel}
         onMouseMove={this.handleMouseMove}
         onMouseDown={this.handleMouseDown}
-        onMouseUp={this.handleMouseUp}
-        onMouseLeave={this.handleMouseLeave}
         onClickCapture={this.handleClickCapture}
       >
         {hexOrigin}
