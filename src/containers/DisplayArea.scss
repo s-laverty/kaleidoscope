@@ -2,10 +2,15 @@
   order: 2;
   flex-grow: 1;
   overflow: hidden;
+  user-select: none;
+  &.move-cursor {
+    cursor: move;
+  }
+
+  & > .hexOrigin {
+    position: relative;
+    height: 0;
+    width: 0;
+  }  
 }
 
-.hexOrigin {
-  position: relative;
-  height: 0;
-  width: 0;
-}

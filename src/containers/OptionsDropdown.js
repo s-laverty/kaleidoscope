@@ -25,7 +25,7 @@ class OptionsDropdown extends React.Component {
           onClick={() => this.props.handleToolbar('set-option', 'change-color-click')}
         >
           <input type='color' ref={this.color_picker_input}
-            value={current.color_picker_value}
+            value={current.colors[current.active_color_index]}
             onClick={e => e.stopPropagation()}
             onChange={e => this.props.handleToolbar('change-color', e.target.value)}
           />
