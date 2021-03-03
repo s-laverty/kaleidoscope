@@ -104,7 +104,7 @@ class DisplayArea extends React.Component {
               if (key in this.props.current.tiledata)
                 color = 'blue';
               else if (translate) {
-                const tile_key = `${x-translate.x},${y-translate.y}`;
+                const tile_key = `${x-translate[0]},${y-translate[1]}`;
                 if (tile_key in this.props.current.tiledata)
                   color = 'orange';
               }

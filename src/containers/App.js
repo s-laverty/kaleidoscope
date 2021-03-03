@@ -2,6 +2,7 @@ import React from 'react'
 import './App.scss';
 import DisplayArea from './DisplayArea';
 import MainToolbar from './MainToolbar';
+import {deepEqual, add} from 'mathjs';
 
 class App extends React.Component {
   static saved_props = {
@@ -206,7 +207,7 @@ class App extends React.Component {
               if (!(key in current.tiledata)) {
                 return {
                   [state.mode]: {...current,
-                    tiledata: {...current.tiledata, [key]: {x: args[0], y: args[1]}}
+                    tiledata: {...current.tiledata, [key]: [...args]}
                   }
                 }
               }
@@ -333,14 +334,11 @@ class App extends React.Component {
   }
 
   tessellate() {
-    const coordEqual = (p1,p2) => p1.x === p2.x && p1.y === p2.y;
-    const hasOverlap = (tile1, tile2, translate={x:0, y:0}) => {
+    const hasOverlap = (tile1, tile2, translate=[0,0]) => {
       for (let p2 of Object.values(tile2)) {
-        p2 = {...p2};
-        p2.x += translate.x;
-        p2.y += translate.y;
+        p2 = add(p2, translate);
         for (let p1 of Object.values(tile1)) {
-          if (coordEqual(p1, p2)) return true;
+          if (deepEqual(p1,p2)) return true;
         }
       }
       return false;
@@ -348,34 +346,32 @@ class App extends React.Component {
     const current = this.state[this.state.mode];
     const tiledata = current.tiledata;
     let translateX = 1;
-    while (hasOverlap(tiledata, tiledata, {x: translateX, y: 0})) ++translateX;
+    while (hasOverlap(tiledata, tiledata, [translateX,0])) ++translateX;
     this.setState(state => ({
-      [state.mode]: {...current, translate: {x: translateX, y: 0}}
+      [state.mode]: {...current, translate: [translateX,0]}
     }));
     const moves = [
-      {x: 1, y: 0},
-      {x: 0, y: 1},
-      {x: -1, y: 1},
-      {x: -1, y: 0},
-      {x: 0, y: -1},
-      {x: 1, y: -1}
+      [1,0],
+      [0,1],
+      [-1,1],
+      [-1,0],
+      [0,-1],
+      [1,-1]
     ];
-    let previous = 1;
+    let previous_move = 1;
     window.setInterval(() => {
       const current = this.state[this.state.mode];
-      for (let i = (previous + 1) % 6; true; i = (i+5) % 6) {
-        const new_translate = {...current.translate};
-        new_translate.x += moves[i].x;
-        new_translate.y += moves[i].y;
+      for (let i = (previous_move + 1) % 6; true; i = (i+5) % 6) {
+        const new_translate = add(current.translate, moves[i]);
         if (!hasOverlap(tiledata, tiledata, new_translate)) {
-          previous = i;
+          previous_move = i;
           this.setState(state => ({
             [state.mode]: {...current, translate: new_translate}
           }));
           break;
         }
       }
-    }, 1000);
+    }, 500);
   }
 
   render() {
