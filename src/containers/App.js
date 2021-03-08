@@ -2,6 +2,7 @@ import React from 'react'
 import './App.scss';
 import DisplayArea from './DisplayArea';
 import MainToolbar from './MainToolbar';
+import Hexagon from '../Hexagon';
 import {deepEqual, add} from 'mathjs';
 
 class App extends React.Component {
@@ -22,7 +23,14 @@ class App extends React.Component {
       zoom: 1.0
     },
     'hex-tessellate': {
-      tiledata: {},
+      tiledata: {
+        '0,0': {
+          coords: [0,0],
+          edges: 0b111111,
+        }
+      },
+      adjacent: new Set(['0,1','1,0','-1,1','-1,0','0,-1','1,-1']),
+      bounding_coords: [0,0,0,0],
       translate: null,
       active_tool: null,
       zoom: 1.0
@@ -165,7 +173,7 @@ class App extends React.Component {
       'tessellate': () => this.tessellate()
     };
     this._display_handlers = {
-      'hex-click': (key, ...args) => {
+      'hex-click': (action, key, coords) => {
         let log_change = false;
         this.setState(state => {
           const current = state[state.mode];
@@ -204,14 +212,131 @@ class App extends React.Component {
                 }
               }
             case 'tile-shape':
-              if (!(key in current.tiledata)) {
-                return {
-                  [state.mode]: {...current,
-                    tiledata: {...current.tiledata, [key]: [...args]}
+              const tiledata = {...current.tiledata};
+              const adjacent = new Set(current.adjacent);
+              const bounding_coords = [...current.bounding_coords];
+              const toggle_edge = (key, edge) => {
+                const current = tiledata[key];
+                tiledata[key] = {...current,
+                  edges: current.edges ^ (1<<edge)
+                };
+              }
+              const check_bounds = (coords, update=false) => {
+                let retval = false;
+                if (coords[0] < bounding_coords[0]) {
+                  if (update) {
+                    bounding_coords[0] = coords[0];
+                    retval = true;
+                  } else return true;
+                } else if (coords[0] > bounding_coords[1]) {
+                  if (update) {
+                    bounding_coords[1] = coords[0];
+                    retval = true;
+                  } else return true;
+                }
+                if (coords[1] < bounding_coords[2]) {
+                  if (update) {
+                    bounding_coords[2] = coords[1];
+                    retval = true;
+                  } else return true;
+                } else if (coords[1] > bounding_coords[3]) {
+                  if (update) {
+                    bounding_coords[3] = coords[1];
+                    retval = true;
+                  } else return true;
+                }
+                return retval;
+              }
+              const fill_hole = coords => {
+                if (check_bounds(coords)) return;
+                const queue = [coords];
+                const explored = new Set([Hexagon.key(coords)]);
+                for (const coords of queue) {
+                  if (Hexagon.someAdjacent(coords, (key,coords) => {
+                    if (adjacent.has(key) && !explored.has(key)) {
+                      if (check_bounds(coords)) return true;
+                      explored.add(key);
+                      queue.push(coords);
+                    }
+                  })) return;
+                }
+                explored.forEach(key => adjacent.delete(key));
+                for (const coords of queue) {
+                  Hexagon.forEachAdjacent(coords, (key,coords,i) => {
+                    if (key in tiledata) {
+                      const old_data = tiledata[key];
+                      tiledata[key] = {...old_data,
+                        edges: old_data.edges ^ (1<<((i+3)%6))
+                      };
+                    } else if (!explored.has(key)) {
+                      explored.add(key);
+                      queue.push(coords);
+                    }
+                  });
+                }
+                queue.forEach(coords =>
+                  tiledata[Hexagon.key(coords)] = {coords: coords, edges: 0});
+              }
+              const explore = () => {
+                const queue = [[0,0]];
+                const explored = new Set(['0,0']);
+                bounding_coords.fill(0);
+                for (const coords of queue) {
+                  Hexagon.forEachAdjacent(coords, (key,coords) => {
+                    if (key in tiledata && !explored.has(key)) {
+                      explored.add(key);
+                      check_bounds(coords, true);
+                      queue.push(coords);
+                    }
+                  });
+                }
+                for (const [key,data] of Object.entries(tiledata)) {
+                  if (!explored.has(key)) {
+                    delete tiledata[key];
+                    Hexagon.forEachAdjacent(data.coords, (key,coords) => {
+                      if (adjacent.has(key) &&
+                      !Hexagon.someAdjacent(coords, key => key in tiledata))
+                        adjacent.delete(key);
+                    });
                   }
                 }
               }
-              break;
+              switch(action) {
+                case 'tile-add':
+                  tiledata[key] = {coords: coords, edges: 0};
+                  adjacent.delete(key);
+                  check_bounds(coords, true);
+                  Hexagon.forEachAdjacent(coords, (other_key,coords,i) => {
+                    if (other_key in tiledata) toggle_edge(other_key, (i+3)%6);
+                    else {
+                      adjacent.add(other_key);
+                      tiledata[key].edges ^= 1<<i;
+                    }
+                  });
+                  Hexagon.forEachAdjacent(coords, (key,coords) => {
+                    if (adjacent.has(key)) fill_hole(coords);
+                  });
+                  break;
+                case 'tile-remove':
+                  delete tiledata[key];
+                  adjacent.add(key);
+                  Hexagon.forEachAdjacent(coords, (key,coords,i) => {
+                    if (key in tiledata) toggle_edge(key, (i+3)%6);
+                    else {
+                      if (adjacent.has(key) &&
+                      !Hexagon.someAdjacent(coords, key => key in tiledata))
+                        adjacent.delete(key);
+                    }
+                  });
+                  explore();
+                  break;
+                default: console.warn(`Unrecognized tile-shape action: ${action}`);
+              }
+              return {
+                [state.mode]: {...current,
+                  tiledata: tiledata, adjacent: adjacent, bounding_coords: bounding_coords
+                }
+              };
             default: break;
           }
         }, () => log_change && this.saveState());
@@ -335,9 +460,9 @@ class App extends React.Component {
 
   tessellate() {
     const hasOverlap = (tile1, tile2, translate=[0,0]) => {
-      for (let p2 of Object.values(tile2)) {
+      for (let {coords: p2} of Object.values(tile2)) {
         p2 = add(p2, translate);
-        for (let p1 of Object.values(tile1)) {
+        for (let {coords: p1} of Object.values(tile1)) {
           if (deepEqual(p1,p2)) return true;
         }
       }
@@ -350,19 +475,11 @@ class App extends React.Component {
     this.setState(state => ({
       [state.mode]: {...current, translate: [translateX,0]}
     }));
-    const moves = [
-      [1,0],
-      [0,1],
-      [-1,1],
-      [-1,0],
-      [0,-1],
-      [1,-1]
-    ];
     let previous_move = 1;
     window.setInterval(() => {
       const current = this.state[this.state.mode];
       for (let i = (previous_move + 1) % 6; true; i = (i+5) % 6) {
-        const new_translate = add(current.translate, moves[i]);
+        const new_translate = add(current.translate, Hexagon.moves[i]);
         if (!hasOverlap(tiledata, tiledata, new_translate)) {
           previous_move = i;
           this.setState(state => ({
