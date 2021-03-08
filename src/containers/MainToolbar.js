@@ -113,6 +113,7 @@ const MainToolbar = props => {
           {props.mode === 'hex-tessellate' && <ToolbarButton
             text='Tessellate!'
             onClick={() => props.handleToolbar('tessellate')}
+            disabled={props.current.active_tool === 'tile-shape'}
           />}
         </div>
       </div>
