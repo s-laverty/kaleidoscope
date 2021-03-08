@@ -76,6 +76,7 @@ class DisplayArea extends React.Component {
   }
 
   render() {
+    const current = this.props.current;
     let hexOrigin = null;
     if (this.container.current) {
       if (['hex-freestyle','hex-tessellate'].includes(this.props.mode)) {
@@ -83,8 +84,8 @@ class DisplayArea extends React.Component {
         const width = this.container.current.clientWidth;
         const height = this.container.current.clientHeight;
         let pan = {x: 0, y: 0};
-        if (this.props.mode === 'hex-freestyle') pan = this.props.current.pan;
-        const zoom = this.props.current.zoom;
+        if (this.props.mode === 'hex-freestyle') pan = current.pan;
+        const zoom = current.zoom;
         const t_px = (-height / 2 - pan.y) / zoom;
         const b_px = (height / 2 - pan.y) / zoom;
         const l_px = (-width / 2 - pan.x) / zoom;
@@ -95,32 +96,49 @@ class DisplayArea extends React.Component {
         for (let y = t, i = 0; y <= b; ++y,++i) {
           for (let x = l; x <= r; ++x) {
             const key = `${x},${y}`;
-            let color = 'lightgray';
+            let color;
+            const other = {};
+            let action=undefined;
             if (this.props.mode === 'hex-freestyle') {
-              if (key in this.props.current.hexcolors)
-                color = this.props.current.hexcolors[key];
+              if (key in current.hexcolors)
+                color = current.hexcolors[key];
             } else if (this.props.mode === 'hex-tessellate') {
-              const translate = this.props.current.translate;
-              if (key in this.props.current.tiledata)
+              const translate = current.translate;
+              if (key in current.tiledata) {
                 color = 'blue';
-              else if (translate) {
+                if (!x && !y) color = 'teal';
+                else if (current.active_tool === 'tile-shape' &&
+                current.tiledata[key].edges) {
+                  other.remove = true;
+                  action='tile-remove';
+                }
+              } else if (current.active_tool === 'tile-shape' &&
+              current.adjacent.has(key)) {
+                other.add = true;
+                action='tile-add';
+              } else if (translate) {
                 const tile_key = `${x-translate[0]},${y-translate[1]}`;
-                if (tile_key in this.props.current.tiledata)
+                if (tile_key in current.tiledata)
                   color = 'orange';
-              }
+                else continue;
+              } else continue;
             }
             hexes.push(<Hexagon key={key} color={color} x={x} y={y}
-              onClick={() => this.props.handleDisplay('hex-click', key, x, y)}/>);
+              onClick={() => this.props.handleDisplay('hex-click', action, key, [x,y])}
+              {...other}/>);
           }
           if ((i + lskew) % 2) --l;
           if ((i + rskew) % 2) --r;
         }
         const style = {transform: ''};
         if (this.props.mode === 'hex-freestyle')
-          style.transform += `translate(${this.props.current.pan.x}px,` +
-          `${this.props.current.pan.y}px)`;
-        style.transform += `scale(${this.props.current.zoom})`;
-        hexOrigin = <div className='hexOrigin' draggable={false} style={style}>{hexes}</div>;
+          style.transform += `translate(${current.pan.x}px,` +
+          `${current.pan.y}px)`;
+        style.transform += `scale(${current.zoom})`;
+        hexOrigin = <div className='hexOrigin' draggable={false} style={style}>
+          {this.props.mode === 'hex-tessellate' && Hexagon.getBorder(current.tiledata)}
+          {hexes}
+        </div>;
       }
     }
     let className = 'DisplayArea flex-center';
