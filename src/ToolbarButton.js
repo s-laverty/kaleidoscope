@@ -11,6 +11,7 @@ class ToolbarButton extends React.Component {
 
   render() {
     const {
+      className: alias=null,
       selected=false,
       icon=null,
       text=null,
@@ -21,13 +22,14 @@ class ToolbarButton extends React.Component {
       ...other
     } = this.props;
     let className='ToolbarButton';
-    if (this.props.className) className += ' ' + this.props.className;
     if (selected) className += ' selected';
     if (this.state.dragover_counter > 0) className += ' dragover';
+    if (alias) className += ' ' + alias;
     let icon_className = 'icon';
     if (icon && icon.border) icon_className += ' border';
     return (
-      <button className={className}
+      <button
+      className={className}
       onDragEnter={e => {
         if (onDragEnter) onDragEnter(e);
         if (e.defaultPrevented)
@@ -44,7 +46,8 @@ class ToolbarButton extends React.Component {
         if (onDrop) onDrop(e);
         this.setState({dragover_counter: 0});
       }}
-      {...other}>
+      {...other}
+      >
         {this.props.icon && (this.props.icon.src ?
           <img className={icon_className}
           src={this.props.icon.src}
