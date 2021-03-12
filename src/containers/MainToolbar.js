@@ -2,6 +2,7 @@ import './MainToolbar.scss';
 import ModeDropdown from './ModeDropdown';
 import FileDropdown from './FileDropdown';
 import OptionsDropdown from './OptionsDropdown';
+import ToolbarDropdown from '../ToolbarDropdown'
 import ToolbarButton from '../ToolbarButton';
 import FileLoadModal from './FileLoadModal'
 import FileSaveModal from './FileSaveModal'
@@ -9,6 +10,16 @@ import WhitePlus from '../assets/white-plus.svg';
 import RedX from '../assets/red-x.svg';
 
 const MainToolbar = props => {
+  const tessellation_options = [];
+  if (props.mode === 'hex-tessellate') {
+    for (let i = 0; i < props.current.tessellations.length; ++i) {
+      tessellation_options.push(<ToolbarButton key={i}
+        onClick={() => props.handleToolbar('set-tessellation-index', i)}
+        selected={props.current.active_tessellation_index === i}
+        text={`Option #${i+1}`}
+      />);
+    }
+  }
   const colors = [];
   if (props.mode === 'hex-freestyle') {
     for (let i = 0; i < props.current.colors.length; ++i) {
@@ -58,6 +69,13 @@ const MainToolbar = props => {
           collapsed={props.active_dropdown !== 'file'}
           handleToolbar={props.handleToolbar}
         />
+        {props.mode === 'hex-tessellate' && <ToolbarDropdown
+          title='Tessellate'
+          disabled={props.current.active_tool === 'tile-shape' ||
+            !props.current.tessellations.length}
+          collapsed={props.active_dropdown !== 'tessellate'}
+          handleToggle={() => props.handleToolbar('set-dropdown', 'tessellate')}
+        >{tessellation_options}</ToolbarDropdown>}
         {props.mode === 'hex-freestyle' && <OptionsDropdown
           mode={props.mode}
           current={props.current}
@@ -108,12 +126,12 @@ const MainToolbar = props => {
           {props.mode === 'hex-tessellate' && <ToolbarButton
             text='Tile Shape'
             selected={props.current.active_tool === 'tile-shape'}
-            onClick={() => props.handleToolbar('set-tool', 'tile-shape')}
-          />}
-          {props.mode === 'hex-tessellate' && <ToolbarButton
-            text='Tessellate!'
-            onClick={() => props.handleToolbar('tessellate')}
-            disabled={props.current.active_tool === 'tile-shape'}
+            onClick={() => {
+              props.handleToolbar('set-tool', 'tile-shape');
+              if (props.current.active_tool === 'tile-shape')
+                props.handleToolbar('tile-shape-confirm');
+              else props.handleToolbar('tile-shape-init');
+            }}
           />}
         </div>
       </div>
