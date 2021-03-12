@@ -7,7 +7,7 @@ const FileDropdown = props => (
     className='FileDropdown'
     title='File'
     collapsed={props.collapsed}
-    handleToggle={() => props.handleToolbar('dropdown-toggle', 'file')}
+    handleToggle={() => props.handleToolbar('set-dropdown', 'file')}
   >
     <ToolbarButton
       text='Load'

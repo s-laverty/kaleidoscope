@@ -7,7 +7,7 @@ const ModeDropdown = props => (
     className='ModeDropdown'
     title='Mode'
     collapsed={props.collapsed}
-    handleToggle={() => props.handleToolbar('dropdown-toggle', 'mode')}
+    handleToggle={() => props.handleToolbar('set-dropdown', 'mode')}
   >
     <ToolbarButton
       text='Hexagon Freestyle'

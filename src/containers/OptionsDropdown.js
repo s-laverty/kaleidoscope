@@ -60,7 +60,7 @@ class OptionsDropdown extends React.Component {
         className='OptionsDropdown'
         title='Options'
         collapsed={this.props.collapsed}
-        handleToggle={() => this.props.handleToolbar('dropdown-toggle', 'options')}
+        handleToggle={() => this.props.handleToolbar('set-dropdown', 'options')}
         disabled={disabled}
         force_open={force_open}
       >

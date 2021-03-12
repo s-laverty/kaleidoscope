@@ -33,7 +33,7 @@ class FileLoadModal extends React.Component {
         switch(result) {
           case 'success':
             this.handleClose();
-            this.props.handleToolbar('dropdown-toggle', null);
+            this.props.handleToolbar('set-dropdown', null);
             break;
           case 'user-cancel':
             this.setState({is_loading: false});
