@@ -13,19 +13,29 @@ class ToolbarDropdown extends React.Component {
   }
 
   render() {
-    let className = this.className;
-    if (this.props.collapsed) {
+    const {
+      className: alias=null,
+      title, handleToggle,
+      collapsed=true,
+      disabled=false,
+      force_open=false,
+      children=null,
+      ...other
+    } = this.props;
+    let className = 'ToolbarDropdown';
+    if (collapsed) {
       className += ' collapsed';
       if (!this.state.transitioning) className += ' no-tr';
     }
-    if (this.props.disabled) className += ' disabled';
-    if (this.props.force_open) className += ' force-open';
+    if (disabled) className += ' disabled';
+    if (force_open) className += ' force-open';
+    if (alias) className += ' ' + alias;
     return (
-      <div className={className}>
+      <div className={className} {...other}>
         <ToolbarButton
-          text={this.props.title}
-          disabled={this.props.disabled}
-          onClick={this.props.handleToggle}
+          text={title}
+          disabled={disabled}
+          onClick={handleToggle}
         >
           <span className='dropdown-icon'></span>
         </ToolbarButton>
@@ -33,7 +43,7 @@ class ToolbarDropdown extends React.Component {
         <div className='drop-list subtle-shadow'
           onTransitionEnd={e => e.propertyName === 'opacity' && this.setState({transitioning: false})}
         >
-          {this.props.children}
+          {children}
         </div>
       </div>
     );

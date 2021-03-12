@@ -48,14 +48,14 @@ class ToolbarButton extends React.Component {
       }}
       {...other}
       >
-        {this.props.icon && (this.props.icon.src ?
+        {icon && (icon.src ?
           <img className={icon_className}
-          src={this.props.icon.src}
-          alt={this.props.icon.alt}
-          style={this.props.icon.style}/>
+          src={icon.src}
+          alt={icon.alt}
+          style={icon.style}/>
           :
           <span className={icon_className}
-          style={this.props.icon.style}/>)
+          style={icon.style}/>)
         }
         {icon && <br/>}
         {text}
