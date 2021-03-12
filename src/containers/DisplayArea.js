@@ -103,7 +103,6 @@ class DisplayArea extends React.Component {
               if (key in current.hexcolors)
                 color = current.hexcolors[key];
             } else if (this.props.mode === 'hex-tessellate') {
-              const translate = current.translate;
               if (key in current.tiledata) {
                 color = 'blue';
                 if (!x && !y) color = 'teal';
@@ -116,10 +115,14 @@ class DisplayArea extends React.Component {
               current.adjacent.has(key)) {
                 other.add = true;
                 action='tile-add';
-              } else if (translate) {
-                const tile_key = `${x-translate[0]},${y-translate[1]}`;
-                if (tile_key in current.tiledata)
+              } else if (current.active_tessellation_index !== null) {
+                const [t1,t2] = current.tessellations[current.active_tessellation_index];
+                const key1 = Hexagon.key([x-t1[0], y-t1[1]]);
+                const key2 = Hexagon.key([x-t2[0], y-t2[1]]);
+                if (key1 in current.tiledata)
                   color = 'orange';
+                else if (key2 in current.tiledata)
+                  color = 'red';
                 else continue;
               } else continue;
             }
@@ -136,7 +139,7 @@ class DisplayArea extends React.Component {
           `${current.pan.y}px)`;
         style.transform += `scale(${current.zoom})`;
         hexOrigin = <div className='hexOrigin' draggable={false} style={style}>
-          {this.props.mode === 'hex-tessellate' && Hexagon.getBorder(current.tiledata)}
+          {this.props.mode === 'hex-tessellate' && Hexagon.getOutline(current.tiledata)}
           {hexes}
         </div>;
       }
