@@ -3,7 +3,7 @@ import './App.scss';
 import DisplayArea from './DisplayArea';
 import MainToolbar from './MainToolbar';
 import Hexagon from '../Hexagon';
-import {deepEqual, add} from 'mathjs';
+import { add, deepEqual, max } from 'mathjs';
 
 class App extends React.Component {
   static saved_props = {
@@ -30,8 +30,8 @@ class App extends React.Component {
         }
       },
       adjacent: new Set(['0,1','1,0','-1,1','-1,0','0,-1','1,-1']),
-      bounding_coords: [0,0,0,0],
-      translate: null,
+      tessellations: [],
+      active_tessellation_index: null,
       active_tool: null,
       zoom: 1.0
     }
@@ -46,14 +46,13 @@ class App extends React.Component {
       ...App.default_props
     };
     this._toolbar_handlers = {
-      'dropdown-toggle': dropdown => {
+      'set-dropdown': dropdown => {
         this.setState(state => {
           if (state.mode === 'hex-freestyle'
           && state['hex-freestyle'].active_option === 'change-color'
           && !state.active_dropdown) return;
           return {
-            active_dropdown: (state.active_dropdown === dropdown ? null : dropdown),
-            active_option: null
+            active_dropdown: (state.active_dropdown === dropdown ? null : dropdown)
           };
         });
       },
@@ -145,24 +144,22 @@ class App extends React.Component {
           };
         });
       },
-      'remove-color': i => {
-        this.setState(state => {
-          const current = state[state.mode];
-          let active_color_index = current.active_color_index;
-          if (i === undefined) i = active_color_index;
-          if (i === active_color_index) active_color_index = null;
-          else if (i < active_color_index) --active_color_index;
-          const colors = current.colors.slice(0, i).concat(
-            current.colors.slice(i + 1));
-          return {
-            [state.mode]: {...current,
-              active_tool: null,
-              colors: colors,
-              active_color_index: active_color_index
-            }
-          };
-        });
-      },
+      'remove-color': i => this.setState(state => {
+        const current = state[state.mode];
+        let active_color_index = current.active_color_index;
+        if (i === undefined) i = active_color_index;
+        if (i === active_color_index) active_color_index = null;
+        else if (i < active_color_index) --active_color_index;
+        const colors = current.colors.slice(0, i).concat(
+          current.colors.slice(i + 1));
+        return {
+          [state.mode]: {...current,
+            active_tool: null,
+            colors: colors,
+            active_color_index: active_color_index
+          }
+        };
+      }),
       'clear-all': () => {
         if (window.confirm('Are you sure you want to clear everything?')) {
           this.setState(state => ({
@@ -170,7 +167,18 @@ class App extends React.Component {
           }));
         }
       },
-      'tessellate': () => this.tessellate()
+      'tile-shape-init': () => this.setState(state => ({
+        [state.mode]: {...state[state.mode],
+          tessellations: [],
+          active_tessellation_index: null,
+        }
+      })),
+      'tile-shape-confirm': () => this.tessellate(),
+      'set-tessellation-index': i => this.setState(state => ({
+        [state.mode]: {...state[state.mode],
+          active_tessellation_index: i,
+        }
+      }))
     };
     this._display_handlers = {
       'hex-click': (action, key, coords) => {
@@ -214,107 +222,39 @@ class App extends React.Component {
             case 'tile-shape':
               const tiledata = {...current.tiledata};
               const adjacent = new Set(current.adjacent);
-              const bounding_coords = [...current.bounding_coords];
               const toggle_edge = (key, edge) => {
                 const current = tiledata[key];
                 tiledata[key] = {...current,
                   edges: current.edges ^ (1<<edge)
                 };
               }
-              const check_bounds = (coords, update=false) => {
-                let retval = false;
-                if (coords[0] < bounding_coords[0]) {
-                  if (update) {
-                    bounding_coords[0] = coords[0];
-                    retval = true;
-                  } else return true;
-                } else if (coords[0] > bounding_coords[1]) {
-                  if (update) {
-                    bounding_coords[1] = coords[0];
-                    retval = true;
-                  } else return true;
-                }
-                if (coords[1] < bounding_coords[2]) {
-                  if (update) {
-                    bounding_coords[2] = coords[1];
-                    retval = true;
-                  } else return true;
-                } else if (coords[1] > bounding_coords[3]) {
-                  if (update) {
-                    bounding_coords[3] = coords[1];
-                    retval = true;
-                  } else return true;
-                }
-                return retval;
-              }
-              const fill_hole = coords => {
-                if (check_bounds(coords)) return;
-                const queue = [coords];
-                const explored = new Set([Hexagon.key(coords)]);
-                for (const coords of queue) {
-                  if (Hexagon.someAdjacent(coords, (key,coords) => {
-                    if (adjacent.has(key) && !explored.has(key)) {
-                      if (check_bounds(coords)) return true;
-                      explored.add(key);
-                      queue.push(coords);
-                    }
-                  })) return;
-                }
-                explored.forEach(key => adjacent.delete(key));
-                for (const coords of queue) {
-                  Hexagon.forEachAdjacent(coords, (key,coords,i) => {
-                    if (key in tiledata) {
-                      const old_data = tiledata[key];
-                      tiledata[key] = {...old_data,
-                        edges: old_data.edges ^ (1<<((i+3)%6))
-                      };
-                    } else if (!explored.has(key)) {
-                      explored.add(key);
-                      queue.push(coords);
-                    }
-                  });
-                }
-                queue.forEach(coords =>
-                  tiledata[Hexagon.key(coords)] = {coords: coords, edges: 0});
-              }
-              const explore = () => {
-                const queue = [[0,0]];
-                const explored = new Set(['0,0']);
-                bounding_coords.fill(0);
-                for (const coords of queue) {
-                  Hexagon.forEachAdjacent(coords, (key,coords) => {
-                    if (key in tiledata && !explored.has(key)) {
-                      explored.add(key);
-                      check_bounds(coords, true);
-                      queue.push(coords);
-                    }
-                  });
-                }
-                for (const [key,data] of Object.entries(tiledata)) {
-                  if (!explored.has(key)) {
-                    delete tiledata[key];
-                    Hexagon.forEachAdjacent(data.coords, (key,coords) => {
-                      if (adjacent.has(key) &&
-                      !Hexagon.someAdjacent(coords, key => key in tiledata))
-                        adjacent.delete(key);
-                    });
-                  }
-                }
-              }
               switch(action) {
                 case 'tile-add':
                   tiledata[key] = {coords: coords, edges: 0};
                   adjacent.delete(key);
-                  check_bounds(coords, true);
                   Hexagon.forEachAdjacent(coords, (other_key,coords,i) => {
                     if (other_key in tiledata) toggle_edge(other_key, (i+3)%6);
                     else {
                       adjacent.add(other_key);
-                      tiledata[key].edges ^= 1<<i;
+                      tiledata[key].edges |= 1<<i;
                     }
                   });
-                  Hexagon.forEachAdjacent(coords, (key,coords) => {
-                    if (adjacent.has(key)) fill_hole(coords);
+                  Hexagon.getHoles(tiledata).forEach(hole => {
+                    hole.forEach(([key,edge]) => toggle_edge(key, edge));
+                    const queue = [];
+                    const fill_hex = (key,coords) => {
+                      if (!(key in tiledata)) {
+                        adjacent.delete(key);
+                        tiledata[key] = {coords: coords, edges: 0};
+                        queue.push(coords);
+                      }
+                    };
+                    let start_coords = add(hole[0][2].coords, Hexagon.moves[hole[0][1]]);
+                    let start_key = Hexagon.key(start_coords);
+                    fill_hex(start_key, start_coords);
+                    for (const coords of queue) {
+                      Hexagon.forEachAdjacent(coords, (key,coords) => fill_hex(key, coords));
+                    }
                   });
                   break;
                 case 'tile-remove':
@@ -323,18 +263,28 @@ class App extends React.Component {
                   Hexagon.forEachAdjacent(coords, (key,coords,i) => {
                     if (key in tiledata) toggle_edge(key, (i+3)%6);
                     else {
-                      if (adjacent.has(key) &&
-                      !Hexagon.someAdjacent(coords, key => key in tiledata))
-                        adjacent.delete(key);
+                      if (adjacent.has(key) && !Hexagon.someAdjacent(coords,
+                        key => key in tiledata
+                      )) adjacent.delete(key);
                     }
                   });
-                  explore();
+                  const connected_part = Hexagon.getConnectedPart(tiledata, '0,0');
+                  Object.entries(tiledata).forEach(([key,hex]) => {
+                    if (!(key in connected_part)) {
+                      delete tiledata[key];
+                      Hexagon.forEachAdjacent(hex.coords, (key,coords) => {
+                        if (adjacent.has(key) && !Hexagon.someAdjacent(coords,
+                          key => key in connected_part
+                        )) adjacent.delete(key);
+                      });
+                    }
+                  })
                   break;
                 default: console.warn(`Unrecognized tile-shape action: ${action}`);
               }
               return {
                 [state.mode]: {...current,
-                  tiledata: tiledata, adjacent: adjacent, bounding_coords: bounding_coords
+                  tiledata: tiledata, adjacent: adjacent
                 }
               };
             default: break;
@@ -459,36 +409,63 @@ class App extends React.Component {
   }
 
   tessellate() {
-    const hasOverlap = (tile1, tile2, translate=[0,0]) => {
-      for (let {coords: p2} of Object.values(tile2)) {
-        p2 = add(p2, translate);
-        for (let {coords: p1} of Object.values(tile1)) {
-          if (deepEqual(p1,p2)) return true;
-        }
-      }
-      return false;
-    }
     const current = this.state[this.state.mode];
     const tiledata = current.tiledata;
-    let translateX = 1;
-    while (hasOverlap(tiledata, tiledata, [translateX,0])) ++translateX;
-    this.setState(state => ({
-      [state.mode]: {...current, translate: [translateX,0]}
-    }));
-    let previous_move = 1;
-    window.setInterval(() => {
-      const current = this.state[this.state.mode];
-      for (let i = (previous_move + 1) % 6; true; i = (i+5) % 6) {
-        const new_translate = add(current.translate, Hexagon.moves[i]);
-        if (!hasOverlap(tiledata, tiledata, new_translate)) {
-          previous_move = i;
-          this.setState(state => ({
-            [state.mode]: {...current, translate: new_translate}
-          }));
-          break;
-        }
+    let initial_x = 1;
+    while (Hexagon.hasOverlap(tiledata, tiledata, [initial_x,0])) ++initial_x;
+    let translate = [initial_x,0];
+    let tile = Hexagon.translate(tiledata, translate);
+    const path = [];
+    let prev = 0;
+    let max_translate=[0,0,0]; // z=(x+y), y, -x
+    while (!deepEqual(translate,[-initial_x,0])) {
+      path.push([translate, tile]);
+      [tile, prev] = Hexagon.revolve(tiledata, tile, prev);
+      translate = add(translate, Hexagon.moves[prev]);
+      max_translate = max([[translate[0]+translate[1],translate[1],-translate[0]],max_translate], 0);
+    }
+    max_translate[2] = -max_translate[2];
+    const test_translate = (translate) => {
+      if (path.some(([other_translate]) => deepEqual(translate, other_translate))) return;
+      let tile = Hexagon.translate(tiledata, translate);
+      if (Hexagon.isAdjacent(tiledata, tile) && !Hexagon.hasOverlap(tiledata, tile))
+        path.push([translate, tile]);
+    };
+    for (let y = 1; y < max_translate[1]; ++y) {
+      for (let x = max_translate[0] - y - 1; x > 0; --x) {
+        test_translate([x,y]);
       }
-    }, 500);
+    }
+    for (let x = 0; x > max_translate[2]; --x) {
+      for (let y = Math.min(max_translate[0] - x, max_translate[1]) - 1; x+y > 0; --y) {
+        test_translate([x,y]);
+      }
+    }
+    for (let z = 0; z > max_translate[2]; --z) {
+      for (let y = Math.min(max_translate[1], z - max_translate[2]) - 1; y > 0; --y) {
+        test_translate([z-y,y]);
+      }
+    }
+    const tessellations = [];
+    const exclude = new Set();
+    while (path.length) {
+      let [translate1, tile1] = path.shift();
+      if (exclude.has(translate1)) continue;
+      path.forEach(([translate2,tile2]) => {
+        if (Hexagon.isAdjacent(tile1, tile2) && !Hexagon.hasOverlap(tile1, tile2)) {
+          const merged = Hexagon.merge(tiledata, tile1, tile2, Hexagon.translate(tile1, translate2));
+          if (!Hexagon.hasHoles(merged)) {
+            tessellations.push([translate1, translate2]);
+            exclude.add(translate2);
+          }
+        }
+      });
+    };
+    this.setState(state => ({
+      [state.mode]: {...state[state.mode],
+        tessellations: tessellations
+      }
+    }));
   }
 
   render() {
