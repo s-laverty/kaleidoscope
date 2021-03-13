@@ -3,7 +3,7 @@ import './App.scss';
 import DisplayArea from './DisplayArea';
 import MainToolbar from './MainToolbar';
 import Hexagon from '../Hexagon';
-import { add, deepEqual, max } from 'mathjs';
+import { add, deepEqual, max, subtract } from 'mathjs';
 
 class App extends React.Component {
   static saved_props = {
@@ -405,52 +405,35 @@ class App extends React.Component {
   tessellate() {
     const current = this.state[this.state.mode];
     const tiledata = current.tiledata;
-    let initial_x = 1;
-    while (Hexagon.hasOverlap(tiledata, tiledata, [initial_x,0])) ++initial_x;
-    let translate = [initial_x,0];
-    let tile = Hexagon.translate(tiledata, translate);
+    const moves = Hexagon.moves.slice(0,4);
+    const explored = new Set(['0,0']);
     const path = [];
-    let prev = 0;
-    let max_translate=[0,0,0]; // z=(x+y), y, -x
-    while (!deepEqual(translate,[-initial_x,0])) {
-      path.push([translate, tile]);
-      [tile, prev] = Hexagon.revolve(tiledata, tile, prev);
-      translate = add(translate, Hexagon.moves[prev]);
-      max_translate = max([[translate[0]+translate[1],translate[1],-translate[0]],max_translate], 0);
+    const explore = translate => {
+      explored.add(String(translate));
+      const tile = Hexagon.translate(tiledata, translate);
+      if (!Hexagon.isAdjacent(tiledata, tile)) return;
+      if (!Hexagon.hasOverlap(tiledata, tile)) path.push([translate, tile]);
+      moves.forEach(move => {
+        const other_translate = add(translate, move);
+        if (!explored.has(String(other_translate))) explore(other_translate);
+      });
     }
-    max_translate[2] = -max_translate[2];
-    const test_translate = (translate) => {
-      if (path.some(([other_translate]) => deepEqual(translate, other_translate))) return;
-      let tile = Hexagon.translate(tiledata, translate);
-      if (Hexagon.isAdjacent(tiledata, tile) && !Hexagon.hasOverlap(tiledata, tile))
-        path.push([translate, tile]);
-    };
-    for (let y = 1; y < max_translate[1]; ++y) {
-      for (let x = max_translate[0] - y - 1; x > 0; --x) {
-        test_translate([x,y]);
-      }
-    }
-    for (let x = 0; x > max_translate[2]; --x) {
-      for (let y = Math.min(max_translate[0] - x, max_translate[1]) - 1; x+y > 0; --y) {
-        test_translate([x,y]);
-      }
-    }
-    for (let z = 0; z > max_translate[2]; --z) {
-      for (let y = Math.min(max_translate[1], z - max_translate[2]) - 1; y > 0; --y) {
-        test_translate([z-y,y]);
-      }
-    }
+    explore([1,0]);
     const tessellations = [];
-    const exclude = new Set();
+    const exclude1 = new Set();
+    const exclude2 = new Set();
     while (path.length) {
       let [translate1, tile1] = path.shift();
-      if (exclude.has(translate1)) continue;
+      if (exclude1.has(String(translate1))) continue;
+      exclude2.clear();
       path.forEach(([translate2,tile2]) => {
+        if (exclude2.has(String(translate2))) return;
         if (Hexagon.isAdjacent(tile1, tile2) && !Hexagon.hasOverlap(tile1, tile2)) {
           const merged = Hexagon.merge(tiledata, tile1, tile2, Hexagon.translate(tile1, translate2));
           if (!Hexagon.hasHoles(merged)) {
             tessellations.push([translate1, translate2]);
-            exclude.add(translate2);
+            exclude1.add(String(translate2));
+            exclude2.add(String(subtract(translate1, translate2)));
           }
         }
       });
