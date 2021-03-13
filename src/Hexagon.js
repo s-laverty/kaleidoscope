@@ -24,7 +24,7 @@ hexconst.between_modifiers = transpose([
   multiply([-1/2,1/2,1,1/2,-1/2,-1], hexconst.y_between_modifier)
 ]);
 
-class Hexagon extends React.Component {
+class Hexagon extends React.PureComponent {
   static moves = [
     [1,0],
     [0,1],
@@ -34,23 +34,17 @@ class Hexagon extends React.Component {
     [1,-1]
   ];
 
-  static key(coords) {
-    return `${coords[0]},${coords[1]}`;
-  }
-
   static forEachAdjacent(coords, callback) {
     for (let i = 0; i < 6; ++i) {
       const other_coords = add(coords, Hexagon.moves[i]);
-      const key = Hexagon.key(other_coords);
-      callback(key, other_coords, i);
+      callback(other_coords, i);
     }
   }
 
   static someAdjacent(coords, test) {
     for (let i = 0; i < 6; ++i) {
       const other_coords = add(coords, Hexagon.moves[i]);
-      const key = Hexagon.key(other_coords);
-      if (test(key, other_coords, i)) return true;
+      if (test(other_coords, i)) return true;
     }
     return false;
   }
@@ -61,8 +55,8 @@ class Hexagon extends React.Component {
 
   static translate(tiledata, translate) {
     return Object.fromEntries(Object.values(tiledata).map(hex => {
-      const new_coords = add(hex.coords, translate);
-      return [Hexagon.key(new_coords), {...hex, coords: new_coords}]
+      const coords = add(hex.coords, translate);
+      return [coords, {...hex, coords: coords}]
     }));
   }
 
@@ -78,8 +72,8 @@ class Hexagon extends React.Component {
   static isAdjacent(tile1, tile2, translate=null) {
     if (translate) tile2 = Hexagon.translate(tile2, translate);
     return Object.values(tile1).some(({coords}) =>
-      Hexagon.someAdjacent(coords, key =>
-        key in tile2
+      Hexagon.someAdjacent(coords, other_coords =>
+        other_coords in tile2
       )
     );
   }
@@ -95,16 +89,18 @@ class Hexagon extends React.Component {
   static merge(...tiles) {
     const merged = {};
     tiles.forEach(tile =>
-      Object.entries(tile).forEach(([key,hex]) => {
-        if (key in merged) throw new Error(`Improper Usage: Overlap between hexes at ${key}`);
-        merged[key] = hex;
-        Hexagon.forEachAdjacent(hex.coords, (other_key,coords,i) => {
-          if (other_key in merged && hex.edges & (1<<i)) {
-            merged[key] = hex = {...hex,
+      Object.values(tile).forEach(hex => {
+        const {coords} = hex;
+        if (coords in merged)
+          throw new Error(`Improper Usage: Overlap between hexes at ${coords}`);
+        merged[coords] = hex;
+        Hexagon.forEachAdjacent(coords, (other_coords,i) => {
+          if (other_coords in merged && hex.edges & (1<<i)) {
+            merged[coords] = hex = {...hex,
               edges: hex.edges & ~(1<<i)
             };
-            const other_hex = merged[other_key];
-            merged[other_key] = {...other_hex,
+            const other_hex = merged[other_coords];
+            merged[other_coords] = {...other_hex,
               edges: other_hex.edges & ~(1<<(i+3)%6)
             };
           }
@@ -114,13 +110,13 @@ class Hexagon extends React.Component {
     return merged;
   }
 
-  static getConnectedPart(tiledata, origin_key) {
-    const part = {[origin_key]: tiledata[origin_key]};
-    const queue = [tiledata[origin_key].coords];
+  static getConnectedPart(tiledata, origin) {
+    const part = {[origin]: tiledata[origin]};
+    const queue = [origin];
     for (const coords of queue) {
-      Hexagon.forEachAdjacent(coords, (key,coords) => {
-        if (key in tiledata && !(key in part)) {
-          part[key] = tiledata[key];
+      Hexagon.forEachAdjacent(coords, coords => {
+        if (coords in tiledata && !(coords in part)) {
+          part[coords] = tiledata[coords];
           queue.push(coords);
         }
       });
@@ -131,9 +127,9 @@ class Hexagon extends React.Component {
   static getConnectedParts(tiledata) {
     const explored = new Set();
     const parts = [];
-    Object.keys(tiledata).forEach(key => {
-      if (!explored.has(key)) {
-        const part = Hexagon.getConnectedPart(tiledata, key);
+    Object.values(tiledata).forEach(({coords}) => {
+      if (!explored.has(String(coords))) {
+        const part = Hexagon.getConnectedPart(tiledata, coords);
         parts.push(part);
         Object.keys(part).forEach(key => explored.add(key));
       }
@@ -142,29 +138,28 @@ class Hexagon extends React.Component {
   }
 
   static isConnected(tiledata) {
-    const part = Hexagon.getConnectedPart(tiledata, Object.keys(tiledata)[0]);
+    const part = Hexagon.getConnectedPart(tiledata, Object.values(tiledata)[0].coords);
     return Object.keys(tiledata).every(key => key in part);
   }
 
   static getBorders(tiledata) {
     const explored_edges = Object.fromEntries(Object.keys(tiledata).map(key => [key,0]));
     const borders = [];
-    Object.entries(tiledata).forEach(([key,hex]) => {
+    Object.values(tiledata).forEach(hex => {
       for (let edge = 0; edge < 6; ++edge) {
-        if (hex.edges & (1<<edge) && !(explored_edges[key] & (1<<edge))) {
-          const start_key = key;
+        if (hex.edges & (1<<edge) && !(explored_edges[hex.coords] & (1<<edge))) {
+          const start_hex = hex;
           const start_edge = edge;
           const border = [];
           do {
-            border.push([key,edge,hex]);
-            explored_edges[key] |= 1<<edge;
+            border.push([hex,edge]);
+            explored_edges[hex.coords] |= 1<<edge;
             edge = (edge+1) % 6;
             if (!(hex.edges & (1<<edge))) {
-              key = Hexagon.key(add(hex.coords, Hexagon.moves[edge]));
-              hex = tiledata[key];
+              hex = tiledata[add(hex.coords, Hexagon.moves[edge])];
               edge = (edge+4) % 6;
             }
-          } while (key !== start_key || edge !== start_edge);
+          } while (hex !== start_hex || edge !== start_edge);
           borders.push(border);
         }
       }
@@ -179,7 +174,7 @@ class Hexagon extends React.Component {
     let min_coords = [Infinity,Infinity];
     let max_coords = [-Infinity,-Infinity];
     let perimeter;
-    borders.forEach(border => border.forEach(([,edge,{coords}]) => {
+    borders.forEach(border => border.forEach(([{coords},edge]) => {
       const edge_coords = add(coords, Hexagon.moves[edge]);
       if (smaller(edge_coords, min_coords).includes(true)) {
         min_coords = min([edge_coords, min_coords], 0);
@@ -231,10 +226,11 @@ class Hexagon extends React.Component {
     }
     const points = [];
     const perimeter = Hexagon.getPerimeter(tiledata);
-    perimeter.reduce((prev_key, [key,edge,{coords}]) => {
-      if (key !== prev_key) points.push(getPoint(coords, (edge+5)%6, true));
+    perimeter.reduce((prev_hex, [hex,edge]) => {
+      const {coords} = hex;
+      if (hex !== prev_hex) points.push(getPoint(coords, (edge+5)%6, true));
       points.push(getPoint(coords, edge));
-      return key;
+      return hex;
     }, perimeter[perimeter.length-1][0]);
     return <svg className='hex-outline'>
       <polygon points={points.join(' ')} fill='none'

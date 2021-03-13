@@ -1,6 +1,7 @@
 import React from 'react';
 import './DisplayArea.scss';
 import Hexagon from '../Hexagon.js';
+import { subtract } from 'mathjs';
 
 class DisplayArea extends React.Component {
   constructor(props) {
@@ -95,40 +96,42 @@ class DisplayArea extends React.Component {
         let {l,r} = hexgrid;
         for (let y = t, i = 0; y <= b; ++y,++i) {
           for (let x = l; x <= r; ++x) {
-            const key = `${x},${y}`;
+            const coords = [x,y];
             let color;
             const other = {};
-            let action=undefined;
+            let action;
             if (this.props.mode === 'hex-freestyle') {
-              if (key in current.hexcolors)
-                color = current.hexcolors[key];
+              other.onMouseDown = other.onMouseOver = e => {
+                if (e.buttons === 1 && !e.shiftKey)
+                  this.props.handleDisplay('hex-click', action, coords);
+              };
+              if (coords in current.hexcolors) color = current.hexcolors[coords];
             } else if (this.props.mode === 'hex-tessellate') {
-              if (key in current.tiledata) {
+              if (coords in current.tiledata) {
                 color = 'blue';
                 if (!x && !y) color = 'teal';
                 else if (current.active_tool === 'tile-shape' &&
-                current.tiledata[key].edges) {
+                current.tiledata[coords].edges) {
                   other.remove = true;
                   action='tile-remove';
                 }
               } else if (current.active_tool === 'tile-shape' &&
-              current.adjacent.has(key)) {
+              current.adjacent.has(String(coords))) {
                 other.add = true;
                 action='tile-add';
               } else if (current.active_tessellation_index !== null) {
                 const [t1,t2] = current.tessellations[current.active_tessellation_index];
-                const key1 = Hexagon.key([x-t1[0], y-t1[1]]);
-                const key2 = Hexagon.key([x-t2[0], y-t2[1]]);
-                if (key1 in current.tiledata)
+                if (subtract(coords, t1) in current.tiledata)
                   color = 'orange';
-                else if (key2 in current.tiledata)
+                else if (subtract(coords, t2) in current.tiledata)
                   color = 'red';
                 else continue;
               } else continue;
             }
-            hexes.push(<Hexagon key={key} color={color} x={x} y={y}
-              onClick={() => this.props.handleDisplay('hex-click', action, key, [x,y])}
-              {...other}/>);
+            hexes.push(<Hexagon key={coords} color={color} x={x} y={y}
+              onClick={() => this.props.handleDisplay('hex-click', action, coords)}
+              {...other}/>
+            );
           }
           if ((i + lskew) % 2) --l;
           if ((i + rskew) % 2) --r;

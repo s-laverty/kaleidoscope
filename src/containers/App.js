@@ -181,7 +181,7 @@ class App extends React.Component {
       }))
     };
     this._display_handlers = {
-      'hex-click': (action, key, coords) => {
+      'hex-click': (action, coords) => {
         let log_change = false;
         this.setState(state => {
           const current = state[state.mode];
@@ -189,8 +189,8 @@ class App extends React.Component {
             case 'color':
               if (current.active_option === 'ink-dropper') {
                 const colors = current.colors.slice();
-                if (current.hexcolors[key])
-                  colors[current.active_color_index] = current.hexcolors[key];
+                if (current.hexcolors[coords])
+                  colors[current.active_color_index] = current.hexcolors[coords];
                 return {
                   [state.mode]: {...current,
                     active_option: null,
@@ -198,12 +198,12 @@ class App extends React.Component {
                   }
                 }
               } else {
-                if (current.hexcolors[key] !== current.colors[current.active_color_index]) {
+                if (current.hexcolors[coords] !== current.colors[current.active_color_index]) {
                   log_change = true;
                   return {
                     [state.mode]: {...current,
                       hexcolors: {...current.hexcolors,
-                        [key]: current.colors[current.active_color_index]
+                        [coords]: current.colors[current.active_color_index]
                       }
                     }
                   }
@@ -213,7 +213,7 @@ class App extends React.Component {
             case 'erase':
               log_change = true;
               const hexcolors = {...current.hexcolors};
-              delete hexcolors[key];
+              delete hexcolors[coords];
               return {
                 [state.mode]: {...current,
                   hexcolors: hexcolors
@@ -222,63 +222,57 @@ class App extends React.Component {
             case 'tile-shape':
               const tiledata = {...current.tiledata};
               const adjacent = new Set(current.adjacent);
-              const toggle_edge = (key, edge) => {
-                const current = tiledata[key];
-                tiledata[key] = {...current,
+              const toggle_edge = (coords, edge) => {
+                const current = tiledata[coords];
+                tiledata[coords] = {...current,
                   edges: current.edges ^ (1<<edge)
                 };
               }
+              const fill_hole = coords => {
+                if (!(coords in tiledata)) {
+                  adjacent.delete(String(coords));
+                  tiledata[coords] = {coords: coords, edges: 0};
+                  Hexagon.forEachAdjacent(coords, other_coords => fill_hole(other_coords));
+                }
+              };
+              const remove_adjacent = coords => {
+                Hexagon.forEachAdjacent(coords, other_coords => {
+                  if (adjacent.has(String(other_coords)) && !Hexagon.someAdjacent(other_coords,
+                    coords => coords in tiledata
+                  )) adjacent.delete(String(other_coords));
+                });
+              };
               switch(action) {
                 case 'tile-add':
-                  tiledata[key] = {coords: coords, edges: 0};
-                  adjacent.delete(key);
-                  Hexagon.forEachAdjacent(coords, (other_key,coords,i) => {
-                    if (other_key in tiledata) toggle_edge(other_key, (i+3)%6);
+                  tiledata[coords] = {coords: coords, edges: 0};
+                  adjacent.delete(String(coords));
+                  Hexagon.forEachAdjacent(coords, (other_coords,i) => {
+                    if (other_coords in tiledata) toggle_edge(other_coords, (i+3)%6);
                     else {
-                      adjacent.add(other_key);
-                      tiledata[key].edges |= 1<<i;
+                      adjacent.add(String(other_coords));
+                      tiledata[coords].edges |= 1<<i;
                     }
                   });
                   Hexagon.getHoles(tiledata).forEach(hole => {
-                    hole.forEach(([key,edge]) => toggle_edge(key, edge));
-                    const queue = [];
-                    const fill_hex = (key,coords) => {
-                      if (!(key in tiledata)) {
-                        adjacent.delete(key);
-                        tiledata[key] = {coords: coords, edges: 0};
-                        queue.push(coords);
-                      }
-                    };
-                    let start_coords = add(hole[0][2].coords, Hexagon.moves[hole[0][1]]);
-                    let start_key = Hexagon.key(start_coords);
-                    fill_hex(start_key, start_coords);
-                    for (const coords of queue) {
-                      Hexagon.forEachAdjacent(coords, (key,coords) => fill_hex(key, coords));
-                    }
+                    hole.forEach(([{coords},edge]) => toggle_edge(coords, edge));
+                    const [{coords: start_coords}, start_edge] = hole[0];
+                    fill_hole(add(start_coords, Hexagon.moves[start_edge]));
                   });
                   break;
                 case 'tile-remove':
-                  delete tiledata[key];
-                  adjacent.add(key);
-                  Hexagon.forEachAdjacent(coords, (key,coords,i) => {
-                    if (key in tiledata) toggle_edge(key, (i+3)%6);
-                    else {
-                      if (adjacent.has(key) && !Hexagon.someAdjacent(coords,
-                        key => key in tiledata
-                      )) adjacent.delete(key);
-                    }
+                  delete tiledata[coords];
+                  adjacent.add(String(coords));
+                  Hexagon.forEachAdjacent(coords, (coords,i) => {
+                    if (coords in tiledata) toggle_edge(coords, (i+3)%6);
                   });
-                  const connected_part = Hexagon.getConnectedPart(tiledata, '0,0');
-                  Object.entries(tiledata).forEach(([key,hex]) => {
-                    if (!(key in connected_part)) {
-                      delete tiledata[key];
-                      Hexagon.forEachAdjacent(hex.coords, (key,coords) => {
-                        if (adjacent.has(key) && !Hexagon.someAdjacent(coords,
-                          key => key in connected_part
-                        )) adjacent.delete(key);
-                      });
-                    }
-                  })
+                  remove_adjacent(coords);
+                  Hexagon.getConnectedParts(tiledata).forEach(connected_part => {
+                    if ('0,0' in connected_part) return;
+                    Object.values(connected_part).forEach(({coords}) => {
+                      delete tiledata[coords];
+                      remove_adjacent(coords);
+                    });
+                  });
                   break;
                 default: console.warn(`Unrecognized tile-shape action: ${action}`);
               }
