@@ -11,6 +11,34 @@
     position: relative;
     height: 0;
     width: 0;
-  }  
+    & > .Hexagon {
+      &.add, &.remove {
+        background-size: 35%;
+        background-position: center;
+        background-repeat: no-repeat;
+      }
+      &.confirm {
+        background-color: teal;
+
+        &:hover {
+          background-color: lightseagreen;
+        }
+      }
+      &.add {
+        background-color: darkgray;
+        background-image: url('../assets/white-plus.svg');
+        &:hover {
+          background-color: lightslategray;
+        }
+      }
+      &.remove {
+        background-color: blue;
+        background-image: url('../assets/white-minus.svg');
+        &:hover {
+          background-color: steelblue;
+        }
+      }
+    }
+  }
 }
 

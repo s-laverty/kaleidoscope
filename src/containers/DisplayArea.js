@@ -7,6 +7,7 @@ class DisplayArea extends React.Component {
   constructor(props) {
     super(props);
     this.container = React.createRef();
+    this.hex_actions = {};
     this.state = {
       dragFrom: null,
       shiftKey: false,
@@ -19,6 +20,7 @@ class DisplayArea extends React.Component {
     this.handleMouseMove = this.handleMouseMove.bind(this);
     this.handleMouseDown = this.handleMouseDown.bind(this);
     this.handleClickCapture = this.handleClickCapture.bind(this);
+    this.handleHexEvent = this.handleHexEvent.bind(this);
   }
 
   handleResize() {
@@ -63,6 +65,19 @@ class DisplayArea extends React.Component {
     }
   }
 
+  handleHexEvent(e, coords) {
+    switch (e.type) {
+      case 'click': this.props.handleDisplay('hex-click', coords, this.hex_actions[coords])
+        break;
+      case 'mouseenter':
+      case 'mousedown':
+        if (!e.shiftKey && e.buttons === 1)
+          this.props.handleDisplay('hex-click', coords);
+        break;
+      default: break;
+    }
+  }
+
   componentDidMount() {
     window.addEventListener('resize', this.handleResize);
     window.addEventListener('keydown', this.handleKeyEvent);
@@ -101,23 +116,22 @@ class DisplayArea extends React.Component {
             const other = {};
             let action;
             if (this.props.mode === 'hex-freestyle') {
-              other.onMouseDown = other.onMouseOver = e => {
-                if (e.buttons === 1 && !e.shiftKey)
-                  this.props.handleDisplay('hex-click', action, coords);
-              };
+              other.onMouseDown = other.onMouseEnter = this.handleHexEvent;
               if (coords in current.hexcolors) color = current.hexcolors[coords];
+              else color = 'lightgray';
             } else if (this.props.mode === 'hex-tessellate') {
               if (coords in current.tiledata) {
-                color = 'blue';
-                if (!x && !y) color = 'teal';
-                else if (current.active_tool === 'tile-shape' &&
+                if (!x && !y) {
+                  other.className = 'confirm';
+                  action='tile-confirm';
+                } else if (current.active_tool === 'tile-shape' &&
                 current.tiledata[coords].edges) {
-                  other.remove = true;
+                  other.className = 'remove';
                   action='tile-remove';
-                }
+                } else color = 'blue';
               } else if (current.active_tool === 'tile-shape' &&
               current.adjacent.has(String(coords))) {
-                other.add = true;
+                other.className = 'add';
                 action='tile-add';
               } else if (current.active_tessellation_index !== null) {
                 const [t1,t2] = current.tessellations[current.active_tessellation_index];
@@ -128,8 +142,9 @@ class DisplayArea extends React.Component {
                 else continue;
               } else continue;
             }
+            this.hex_actions[coords] = action;
             hexes.push(<Hexagon key={coords} color={color} x={x} y={y}
-              onClick={() => this.props.handleDisplay('hex-click', action, coords)}
+              onClick = {this.handleHexEvent}
               {...other}/>
             );
           }

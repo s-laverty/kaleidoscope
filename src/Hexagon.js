@@ -3,26 +3,37 @@ import './Hexagon.scss';
 import { multiply, transpose, add, deepEqual, smaller, larger, min, max } from 'mathjs';
 
 const hexconst = {
+  shape: transpose([
+    multiply(Math.cos(Math.PI/6), [1,0,-1,-1,0,1]),
+    [1/2,1,1/2,-1/2,-1,-1/2]
+  ]),
   radius: 50,
+  apothem: undefined,
+  vertices: undefined,
   margin: 7.5,
+  spacing: Array(2),
   stroke_width: 5,
-  border_color: 'fuchsia'
+  border_color: 'fuchsia',
+  border_vertices: undefined,
+  border_vertices_between: undefined
 }
 hexconst.apothem = hexconst.radius * Math.cos(Math.PI/6);
-hexconst.x_spacing = hexconst.apothem*2 + hexconst.margin;
-hexconst.y_spacing = hexconst.x_spacing * Math.cos(Math.PI/6);
-hexconst.x_modifier = hexconst.apothem + hexconst.stroke_width/2;
-hexconst.y_modifier = hexconst.x_modifier / Math.cos(Math.PI/6);
-hexconst.x_between_modifier = (hexconst.margin - hexconst.stroke_width)/2;
-hexconst.y_between_modifier = hexconst.x_between_modifier / Math.cos(Math.PI/6);
-hexconst.modifiers = transpose([
-  multiply([1,0,-1,-1,0,1], hexconst.x_modifier),
-  multiply([1/2,1,1/2,-1/2,-1,-1/2], hexconst.y_modifier)
-]);
-hexconst.between_modifiers = transpose([
-  multiply([1,1,0,-1,-1,0], hexconst.x_between_modifier),
-  multiply([-1/2,1/2,1,1/2,-1/2,-1], hexconst.y_between_modifier)
-]);
+hexconst.vertices = multiply(hexconst.radius, hexconst.shape);
+hexconst.spacing = multiply(
+  hexconst.apothem*2 + hexconst.margin,
+  [[1,1/2],
+   [0,Math.cos(Math.PI/6)]]
+);
+hexconst.border_vertices = multiply(
+  hexconst.radius + hexconst.stroke_width/2/Math.cos(Math.PI/6),
+  hexconst.shape
+);
+hexconst.border_vertices_between = add(hexconst.border_vertices,
+  multiply(
+    (hexconst.margin - hexconst.stroke_width)/2/Math.cos(Math.PI/6),
+    hexconst.shape.slice(-1).concat(hexconst.shape.slice(0,-1))
+  )
+);
 
 class Hexagon extends React.PureComponent {
   static moves = [
@@ -199,10 +210,12 @@ class Hexagon extends React.PureComponent {
   }
 
   static visibleInBox(t,r,b,l) {
-    let leftMost = Math.ceil(2*l / hexconst.x_spacing) - 1; // Measured in half hexes
-    let rightMost = Math.floor(2*r / hexconst.x_spacing) + 1; // Measured in half hexes
-    let topMost = Math.ceil((t + hexconst.radius/2) / hexconst.y_spacing) - 1; // Measured in rows
-    let bottomMost = Math.floor((b - hexconst.radius/2) / hexconst.y_spacing) + 1; // Measured in rows
+    const x_spacing = hexconst.spacing[0][0];
+    const y_spacing = hexconst.spacing[1][1];
+    let leftMost = Math.ceil(2*l / x_spacing) - 1; // Measured in half hexes
+    let rightMost = Math.floor(2*r / x_spacing) + 1; // Measured in half hexes
+    let topMost = Math.ceil((t + hexconst.radius/2) / y_spacing) - 1; // Measured in rows
+    let bottomMost = Math.floor((b - hexconst.radius/2) / y_spacing) + 1; // Measured in rows
     let ldiff = leftMost - topMost;
     let rdiff = rightMost - topMost;
     return {
@@ -216,47 +229,54 @@ class Hexagon extends React.PureComponent {
   }
 
   static getOutline(tiledata) {
-    const getPoint = (coords, vertex, between=false) => {
-      // TODO: adjust point for in-between hexes
-      let x = (coords[0] + coords[1]/2)*hexconst.x_spacing + hexconst.modifiers[vertex][0];
-      if (between) x += hexconst.between_modifiers[vertex][0];
-      let y = coords[1]*hexconst.y_spacing + hexconst.modifiers[vertex][1];
-      if (between) y += hexconst.between_modifiers[vertex][1];
-      return `${x},${y}`;
-    }
     const points = [];
     const perimeter = Hexagon.getPerimeter(tiledata);
     perimeter.reduce((prev_hex, [hex,edge]) => {
       const {coords} = hex;
-      if (hex !== prev_hex) points.push(getPoint(coords, (edge+5)%6, true));
-      points.push(getPoint(coords, edge));
+      const center = multiply(hexconst.spacing, coords);
+      if (hex !== prev_hex)
+        points.push(add(center, hexconst.border_vertices_between[(edge+5)%6]));
+      points.push(add(center, hexconst.border_vertices[edge]));
       return hex;
     }, perimeter[perimeter.length-1][0]);
-    return <svg className='hex-outline'>
-      <polygon points={points.join(' ')} fill='none'
-      strokeWidth={hexconst.stroke_width} stroke={hexconst.border_color}/>
-    </svg>;
+    return (
+      <svg className='hex-outline'>
+        <polygon points={points.join(' ')} fill='none'
+        strokeWidth={hexconst.stroke_width} stroke={hexconst.border_color}/>
+      </svg>
+    );
+  }
+
+  static renderTile(tiledata) {
+
+    return (
+      <svg>
+      </svg>
+    )
   }
   
   render() {
     const {
-      className: alias=null,
-      color='lightgray',
+      className,
+      color,
       x, y,
-      add=false,
-      remove=false,
+      style,
       ...other
     } = this.props;
-    let className = 'Hexagon';
-    if (add) className += ' add';
-    if (remove) className += ' remove';
-    if (alias) className += ' ' + alias;
-    const transform = 'translate(-50%, -50%)' +
-      `translate(${x * hexconst.x_spacing + y * hexconst.x_spacing/2}px,` +
-      `${y * hexconst.y_spacing}px)`;
+    Object.entries(other).forEach(([key,val]) => {
+      if (key.startsWith('on') && typeof val === 'function')
+        other[key] = e => val(e, [x,y])
+    });
+    const derived_className = ['Hexagon'];
+    if (className) derived_className.push(className);
+    const derived_style = {...style,
+      transform: 'translate(-50%,-50%)' +
+        `translate(${multiply(hexconst.spacing, [x,y]).join('px,')}px`
+    };
+    if (color) derived_style.backgroundColor = color;
     return (
-      <div className={className} draggable={false}
-      style={{transform: transform, backgroundColor: color}}
+      <div className={derived_className.join(' ')} draggable={false}
+      style={derived_style}
       {...other}/>
     );
   }

@@ -126,12 +126,7 @@ const MainToolbar = props => {
           {props.mode === 'hex-tessellate' && <ToolbarButton
             text='Tile Shape'
             selected={props.current.active_tool === 'tile-shape'}
-            onClick={() => {
-              props.handleToolbar('set-tool', 'tile-shape');
-              if (props.current.active_tool === 'tile-shape')
-                props.handleToolbar('tile-shape-confirm');
-              else props.handleToolbar('tile-shape-init');
-            }}
+            onClick={() => props.handleToolbar('tile-shape')}
           />}
         </div>
       </div>

@@ -5,25 +5,6 @@
   clip-path: polygon(
     50% 0%, 93.3013% 25%, 93.3013% 75%, 50% 100%, 6.6987% 75%, 6.6987% 25%
   );
-  &.add, &.remove {
-    background-size: 35%;
-    background-position: center;
-    background-repeat: no-repeat;
-  }
-  &.add {
-    background-color: purple !important;
-    background-image: url('assets/white-plus.svg');
-    &:hover {
-      background-color: mediumpurple !important;
-    }
-  }
-  &.remove {
-    background-color: blue !important;
-    background-image: url('assets/white-minus.svg');
-    &:hover {
-      background-color: steelblue !important;
-    }
-  }
 }
 
 svg.hex-outline {

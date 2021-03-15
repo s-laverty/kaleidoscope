@@ -3,7 +3,7 @@ import './App.scss';
 import DisplayArea from './DisplayArea';
 import MainToolbar from './MainToolbar';
 import Hexagon from '../Hexagon';
-import { add, deepEqual, max, subtract } from 'mathjs';
+import { add, subtract } from 'mathjs';
 
 class App extends React.Component {
   static saved_props = {
@@ -32,7 +32,7 @@ class App extends React.Component {
       adjacent: new Set(['0,1','1,0','-1,1','-1,0','0,-1','1,-1']),
       tessellations: [],
       active_tessellation_index: null,
-      active_tool: null,
+      active_tool: 'tile-shape',
       zoom: 1.0
     }
   }
@@ -167,13 +167,16 @@ class App extends React.Component {
           }));
         }
       },
-      'tile-shape-init': () => this.setState(state => ({
-        [state.mode]: {...state[state.mode],
-          tessellations: [],
-          active_tessellation_index: null,
-        }
-      })),
-      'tile-shape-confirm': () => this.tessellate(),
+      'tile-shape': () => {
+        if (this.state[this.state.mode].active_tool === 'tile-shape') this.tessellate();
+        else this.setState(state => ({
+          [state.mode]: {...state[state.mode],
+            tessellations: [],
+            active_tessellation_index: null
+          }
+        }));
+        this._toolbar_handlers['set-tool']('tile-shape');
+      },
       'set-tessellation-index': i => this.setState(state => ({
         [state.mode]: {...state[state.mode],
           active_tessellation_index: i,
@@ -181,7 +184,7 @@ class App extends React.Component {
       }))
     };
     this._display_handlers = {
-      'hex-click': (action, coords) => {
+      'hex-click': (coords, action) => {
         let log_change = false;
         this.setState(state => {
           const current = state[state.mode];
