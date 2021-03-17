@@ -1,9 +1,9 @@
 import React from 'react';
 import './Hexagon.scss';
-import { multiply, transpose, add, subtract, smaller, larger, min, max, deepEqual } from 'mathjs';
+import { multiply, transpose, add, subtract, smaller, larger, min, max,
+  deepEqual, lup, ceil, lusolve, floor, flatten } from 'mathjs';
 
 const hexconst = {
-
   shape: transpose([
     multiply(Math.cos(Math.PI/6), [1,0,-1,-1,0,1]),
     [1/2,1,1/2,-1/2,-1,-1/2]
@@ -14,9 +14,9 @@ const hexconst = {
   margin: 7.5,
   spacing: Array(2),
   stroke_width: 5,
-  border_color: 'fuchsia',
+  border_color: 'black',
   border_vertices: undefined,
-  border_vertices_between: undefined
+  border_vertices_concave: undefined
 }
 hexconst.apothem = hexconst.radius * Math.cos(Math.PI/6);
 hexconst.vertices = multiply(hexconst.radius, hexconst.shape);
@@ -29,7 +29,7 @@ hexconst.border_vertices = multiply(
   hexconst.radius + hexconst.stroke_width/2/Math.cos(Math.PI/6),
   hexconst.shape
 );
-hexconst.border_vertices_between = add(hexconst.border_vertices,
+hexconst.border_vertices_concave = add(hexconst.border_vertices,
   multiply(
     (hexconst.margin - hexconst.stroke_width)/2/Math.cos(Math.PI/6),
     hexconst.shape.slice(-1).concat(hexconst.shape.slice(0,-1))
@@ -38,31 +38,33 @@ hexconst.border_vertices_between = add(hexconst.border_vertices,
 
 class Hexagon extends React.PureComponent {
 
-  static Map = class extends Map {
+  static Map = (map => class {
     constructor(iterable) {
       if (iterable instanceof Hexagon.Map)
-        super(iterable);
+        this[map] = new Map(iterable[map]);
       else {
-        super();
+        this[map] = new Map();
         if (iterable) for (let entry of iterable) this.set(...entry);
       }
     }
-    delete(point) { return super.delete(point?.toString()); }
-    get(point) { return super.get(point?.toString())?.[1]; }
-    has(point) { return super.has(point?.toString()); }
+    get size() { return this[map].size; }
+    clear() { this[map].clear(); }
+    delete(point) { return this[map].delete(point?.toString()); }
+    get(point) { return this[map].get(point?.toString())?.[1]; }
+    has(point) { return this[map].has(point?.toString()); }
     set(point, value) {
-      super.set(point?.toString(), [point, value]);
+      this[map].set(point?.toString(), [point, value]);
       return this;
     }
     [Symbol.iterator]() { return this.entries(); }
     *keys() { for (let [point] of this.entries()) yield point; }
     *values() { for (let [,value] of this.entries()) yield value; }
-    entries() { return super.values(); }
+    entries() { return this[map].values(); }
     forEach(callbackFn, thisArg=this) {
       for (let [point, value] of this.entries())
         callbackFn.call(thisArg, value, point);
     }
-  };
+  })(Symbol('map'));
 
   static Set = (map => class {
     constructor(iterable) {
@@ -307,32 +309,72 @@ class Hexagon extends React.PureComponent {
     };
   }
 
-  static getOutline(tile) {
+  static *getTilesInWindow(window, tessellation) {
+    tessellation = transpose(tessellation);
+    const tr_lup = lup(multiply(hexconst.spacing, tessellation));
+    let min_point = [Infinity,Infinity];
+    let max_point = [-Infinity,-Infinity];
+    [window[0], window[1], [window[0][0],window[1][1]], [window[1][0],window[0][1]]]
+    .forEach(vertex => {
+      const sol = flatten(lusolve(tr_lup, vertex)).toArray();
+      min_point = min([floor(sol), min_point], 0);
+      max_point = max([ceil(sol), max_point], 0);
+    });
+    for (let i = min_point[0]; i <= max_point[0]; ++i)
+      for (let j = min_point[1]; j <= max_point[1]; ++j)
+        yield multiply(tessellation, [i,j]);
+  }
+
+  static Outline = React.memo(props => {
+    const {tile} = props;
     const points = [];
     const perimeter = this.getPerimeter(tile);
     perimeter.reduce((prev_point, [point, i]) => {
       const center = multiply(hexconst.spacing, point);
       if (!deepEqual(point, prev_point))
-        points.push(add(center, hexconst.border_vertices_between[(i+5)%6]));
+        points.push(add(center, hexconst.border_vertices_concave[(i+5)%6]));
       points.push(add(center, hexconst.border_vertices[i]));
       return point;
     }, perimeter[perimeter.length-1][0]);
     return (
-      <svg className='hex-outline'>
+      <svg className='Hexagon_Outline'>
         <polygon points={points.join(' ')} fill='none'
         strokeWidth={hexconst.stroke_width} stroke={hexconst.border_color}/>
       </svg>
     );
-  }
+  });
 
-  static renderTile(tile) {
-
+  static Tile = React.memo(props => {
+    const {
+      tile,
+      outline=false,
+      color_override,
+      x, y,
+      style
+    } = props;
+    const hexes = [];
+    for (let [point, {color='lightgray'}] of tile) {
+      if (color_override) color = color_override;
+      const center = multiply(hexconst.spacing, point);
+      hexes.push(
+        <polygon key={point}
+        points={hexconst.vertices.map(vertex => add(center, vertex)).join(' ')}
+        fill={color} stroke='none'/>
+      );
+    }
+    const derived_style = {...style};
+    if (x || y) {
+      derived_style.transform = `translate(${multiply(hexconst.spacing, [x,y]).join('px,')}px`;
+      if (style?.transform) derived_style.transform += style.transform;
+    }
     return (
-      <svg>
+      <svg className='Hexagon_Tile' style={derived_style}>
+        {outline && <Hexagon.Outline tile={tile}/>}
+        {hexes}
       </svg>
-    )
-  }
-  
+    );
+  });
+
   render() {
     const {
       className,
