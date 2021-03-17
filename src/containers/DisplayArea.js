@@ -1,13 +1,15 @@
 import React from 'react';
 import './DisplayArea.scss';
 import Hexagon from '../Hexagon.js';
-import { subtract } from 'mathjs';
 
 class DisplayArea extends React.Component {
+
+  static HexOutline = React.memo(props => Hexagon.getOutline(props.tiledata));
+
   constructor(props) {
     super(props);
     this.container = React.createRef();
-    this.hex_actions = {};
+    this.hex_actions = new Hexagon.Map();
     this.state = {
       dragFrom: null,
       shiftKey: false,
@@ -65,14 +67,15 @@ class DisplayArea extends React.Component {
     }
   }
 
-  handleHexEvent(e, coords) {
+  handleHexEvent(e, point) {
     switch (e.type) {
-      case 'click': this.props.handleDisplay('hex-click', coords, this.hex_actions[coords])
+      case 'click': 
+        this.props.handleDisplay('hex-click', point, this.hex_actions.get(point));
         break;
       case 'mouseenter':
       case 'mousedown':
         if (!e.shiftKey && e.buttons === 1)
-          this.props.handleDisplay('hex-click', coords);
+          this.props.handleDisplay('hex-click', point);
         break;
       default: break;
     }
@@ -111,39 +114,39 @@ class DisplayArea extends React.Component {
         let {l,r} = hexgrid;
         for (let y = t, i = 0; y <= b; ++y,++i) {
           for (let x = l; x <= r; ++x) {
-            const coords = [x,y];
+            const point = [x,y];
             let color;
             const other = {};
             let action;
             if (this.props.mode === 'hex-freestyle') {
               other.onMouseDown = other.onMouseEnter = this.handleHexEvent;
-              if (coords in current.hexcolors) color = current.hexcolors[coords];
-              else color = 'lightgray';
+              color = current.tiledata.get(point)?.color;
+              if (!color) color = 'lightgray';
             } else if (this.props.mode === 'hex-tessellate') {
-              if (coords in current.tiledata) {
+              if (current.tiledata.has(point)) {
                 if (!x && !y) {
                   other.className = 'confirm';
                   action='tile-confirm';
-                } else if (current.active_tool === 'tile-shape' &&
-                current.tiledata[coords].edges) {
+                } else if (current.active_tool === 'tile-shape'
+                && current.tiledata.get(point).edges) {
                   other.className = 'remove';
                   action='tile-remove';
                 } else color = 'blue';
               } else if (current.active_tool === 'tile-shape' &&
-              current.adjacent.has(String(coords))) {
+              current.adjacent.has(point)) {
                 other.className = 'add';
                 action='tile-add';
               } else if (current.active_tessellation_index !== null) {
                 const [t1,t2] = current.tessellations[current.active_tessellation_index];
-                if (subtract(coords, t1) in current.tiledata)
+                if (current.tiledata.has(Hexagon.subtract(point, t1)))
                   color = 'orange';
-                else if (subtract(coords, t2) in current.tiledata)
+                else if (current.tiledata.has(Hexagon.subtract(point, t2)))
                   color = 'red';
                 else continue;
               } else continue;
             }
-            this.hex_actions[coords] = action;
-            hexes.push(<Hexagon key={coords} color={color} x={x} y={y}
+            this.hex_actions.set(point, action);
+            hexes.push(<Hexagon key={point} color={color} x={x} y={y}
               onClick = {this.handleHexEvent}
               {...other}/>
             );
@@ -157,7 +160,8 @@ class DisplayArea extends React.Component {
           `${current.pan.y}px)`;
         style.transform += `scale(${current.zoom})`;
         hexOrigin = <div className='hexOrigin' draggable={false} style={style}>
-          {this.props.mode === 'hex-tessellate' && Hexagon.getOutline(current.tiledata)}
+          {this.props.mode === 'hex-tessellate' &&
+          <DisplayArea.HexOutline tiledata = {current.tiledata}/>}
           {hexes}
         </div>;
       }

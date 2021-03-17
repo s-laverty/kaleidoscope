@@ -1,8 +1,9 @@
 import React from 'react';
 import './Hexagon.scss';
-import { multiply, transpose, add, deepEqual, smaller, larger, min, max } from 'mathjs';
+import { multiply, transpose, add, subtract, smaller, larger, min, max, deepEqual } from 'mathjs';
 
 const hexconst = {
+
   shape: transpose([
     multiply(Math.cos(Math.PI/6), [1,0,-1,-1,0,1]),
     [1/2,1,1/2,-1/2,-1,-1/2]
@@ -36,7 +37,69 @@ hexconst.border_vertices_between = add(hexconst.border_vertices,
 );
 
 class Hexagon extends React.PureComponent {
-  static moves = [
+
+  static Map = class extends Map {
+    constructor(iterable) {
+      if (iterable instanceof Hexagon.Map)
+        super(iterable);
+      else {
+        super();
+        if (iterable) for (let entry of iterable) this.set(...entry);
+      }
+    }
+    delete(point) { return super.delete(point?.toString()); }
+    get(point) { return super.get(point?.toString())?.[1]; }
+    has(point) { return super.has(point?.toString()); }
+    set(point, value) {
+      super.set(point?.toString(), [point, value]);
+      return this;
+    }
+    [Symbol.iterator]() { return this.entries(); }
+    *keys() { for (let [point] of this.entries()) yield point; }
+    *values() { for (let [,value] of this.entries()) yield value; }
+    entries() { return super.values(); }
+    forEach(callbackFn, thisArg=this) {
+      for (let [point, value] of this.entries())
+        callbackFn.call(thisArg, value, point);
+    }
+  };
+
+  static Set = (map => class {
+    constructor(iterable) {
+      if (iterable instanceof Hexagon.Set)
+        this[map] = new Hexagon.Map(iterable[map]);
+      else {
+        this[map] = new Hexagon.Map();
+        if (iterable) for (let point of iterable) this.add(point);
+      }
+    }
+    get size() { return this[map].size; }
+    add(point) {
+      this[map].set(point, point);
+      return this;
+    }
+    clear() { this[map].clear(); }
+    delete(point) { return this[map].delete(point); }
+    has(point) { return this[map].has(point); }
+    [Symbol.iterator]() { return this.values(); }
+    keys() { return this.values(); }
+    values() { return this[map].keys(); }
+    entries() { return this[map].entries(); }
+    forEach(callbackFn, thisArg=this) {
+      for (let point of this.values())
+        callbackFn.call(thisArg, point);
+    }
+  })(Symbol('map'));
+
+  static add(p1, p2) {
+    return add(p1, p2);
+  }
+
+  static subtract(p1, p2) {
+    return subtract(p1, p2);
+  }
+
+  static steps = [
     [1,0],
     [0,1],
     [-1,1],
@@ -45,168 +108,184 @@ class Hexagon extends React.PureComponent {
     [1,-1]
   ];
 
-  static forEachAdjacent(coords, callback) {
+  static step(point, i) {
+    return this.add(point, this.steps[i])
+  }
+
+  static forEachAdjacent(point, callback) {
     for (let i = 0; i < 6; ++i) {
-      const other_coords = add(coords, Hexagon.moves[i]);
-      callback(other_coords, i);
+      const other_point = this.step(point, i);
+      callback(other_point, i);
     }
   }
 
-  static someAdjacent(coords, test) {
+  static someAdjacent(point, test) {
     for (let i = 0; i < 6; ++i) {
-      const other_coords = add(coords, Hexagon.moves[i]);
-      if (test(other_coords, i)) return true;
+      const other_point = this.step(point, i);
+      if (test(other_point, i)) return true;
     }
     return false;
   }
 
-  static everyAdjacent(coords, test) {
-    return !Hexagon.someAdjacent(coords, (...args) => !test(...args));
+  static everyAdjacent(point, test) {
+    return !this.someAdjacent(point, (...args) => !test(...args));
   }
 
-  static translate(tiledata, translate) {
-    return Object.fromEntries(Object.values(tiledata).map(hex => {
-      const coords = add(hex.coords, translate);
-      return [coords, {...hex, coords: coords}]
-    }));
+  static isAdjacent(p1, p2) {
+    return this.someAdjacent(p1, point => deepEqual(point, p2));
+  }
+
+  static translate(tile, translate) {
+    const translated = new this.Map();
+    for (const [point, data] of tile)
+      translated.set(this.add(point, translate), data);
+    return translated;
   }
 
   static hasOverlap(tile1, tile2, translate=null) {
-    if (translate) tile2 = Hexagon.translate(tile2, translate);
-    return Object.values(tile1).some(({coords: p1}) =>
-      Object.values(tile2).some(({coords: p2}) =>
-        deepEqual(p1,p2)
-      )
-    );
-  }
-
-  static isAdjacent(tile1, tile2, translate=null) {
-    if (translate) tile2 = Hexagon.translate(tile2, translate);
-    return Object.values(tile1).some(({coords}) =>
-      Hexagon.someAdjacent(coords, other_coords =>
-        other_coords in tile2
-      )
-    );
-  }
-
-  static revolve(center, satellite, previous_move) {
-    for (let i = (previous_move + 2) % 6; true; i = (i+5) % 6) {
-      let new_satellite = Hexagon.translate(satellite, Hexagon.moves[i]);
-      if (!Hexagon.hasOverlap(center, new_satellite))
-        return [new_satellite, i];
+    let [smaller, larger] = [tile1, tile2].sort(tile => tile.size);
+    if (translate) {
+      if (smaller === tile1) translate = multiply(translate, -1);
+      smaller = this.translate(smaller, translate);
     }
+    for (const point of smaller.keys())
+      if (larger.has(point)) return true;
+    return false;
+  }
+
+  static tilesAdjacent(tile1, tile2, translate=null) {
+    let [smaller, larger] = [tile1, tile2].sort(tile => tile.size);
+    if (translate) {
+      if (smaller === tile1) translate = multiply(translate, -1);
+      smaller = this.translate(smaller, translate);
+    }
+    for (const point of smaller.keys())
+      if (this.someAdjacent(point, adj_point => larger.has(adj_point))) return true;
+    return false;
   }
 
   static merge(...tiles) {
-    const merged = {};
-    tiles.forEach(tile =>
-      Object.values(tile).forEach(hex => {
-        const {coords} = hex;
-        if (coords in merged)
-          throw new Error(`Improper Usage: Overlap between hexes at ${coords}`);
-        merged[coords] = hex;
-        Hexagon.forEachAdjacent(coords, (other_coords,i) => {
-          if (other_coords in merged && hex.edges & (1<<i)) {
-            merged[coords] = hex = {...hex,
-              edges: hex.edges & ~(1<<i)
+    const merged = new this.Map();
+    for (const tile of tiles) {
+      for (let [point, data] of tile) {
+        if (merged.has(point))
+          throw new Error(`Improper Usage: Overlap between hexes at ${point}`);
+        merged.set(point, data);
+        this.forEachAdjacent(point, (adj_point, i) => {
+          const adj_data = merged.get(adj_point);
+          if (adj_data && data.edges & (1<<i)) {
+            data = {...data,
+              edges: data.edges & ~(1<<i)
             };
-            const other_hex = merged[other_coords];
-            merged[other_coords] = {...other_hex,
-              edges: other_hex.edges & ~(1<<(i+3)%6)
-            };
+            merged.set(point, data);
+            merged.set(adj_point, {...adj_data,
+              edges: adj_data.edges & ~(1<<(i+3)%6)
+            });
           }
         });
-      })
-    );
+      }
+    }
     return merged;
   }
 
-  static getConnectedPart(tiledata, origin) {
-    const part = {[origin]: tiledata[origin]};
-    const queue = [origin];
-    for (const coords of queue) {
-      Hexagon.forEachAdjacent(coords, coords => {
-        if (coords in tiledata && !(coords in part)) {
-          part[coords] = tiledata[coords];
-          queue.push(coords);
-        }
-      });
+  static getConnectedPart(tile, start_point) {
+    const part = new this.Map();
+    const start_data = tile.get(start_point);
+    if (start_data) {
+      part.set(start_point, start_data);
+      const queue = [start_point];
+      while (queue.length) {
+        const point = queue.shift();
+        this.forEachAdjacent(point, adj_point => {
+          const adj_data = tile.get(adj_point);
+          if (adj_data && !part.has(adj_point)) {
+            part.set(adj_point, adj_data);
+            queue.push(adj_point);
+          }
+        });
+      }
     }
     return part;
   }
 
-  static getConnectedParts(tiledata) {
-    const explored = new Set();
+  static getConnectedParts(tile) {
+    const explored = new this.Set();
     const parts = [];
-    Object.values(tiledata).forEach(({coords}) => {
-      if (!explored.has(String(coords))) {
-        const part = Hexagon.getConnectedPart(tiledata, coords);
+    for (const point of tile.keys()) {
+      if (!explored.has(point)) {
+        const part = this.getConnectedPart(tile, point);
         parts.push(part);
-        Object.keys(part).forEach(key => explored.add(key));
+        for (const point of part.keys()) explored.add(point);
       }
-    });
+    };
     return parts;
   }
 
-  static isConnected(tiledata) {
-    const part = Hexagon.getConnectedPart(tiledata, Object.values(tiledata)[0].coords);
-    return Object.keys(tiledata).every(key => key in part);
+  static isConnected(tile) {
+    const start_point = tile.keys().next().value;
+    const part = this.getConnectedPart(tile, start_point);
+    for (const point of tile.keys()) if (!part.has(point)) return false;
+    return true;
   }
 
-  static getBorders(tiledata) {
-    const explored_edges = Object.fromEntries(Object.keys(tiledata).map(key => [key,0]));
+  static getBorders(tile) {
+    const explored_edges = new this.Map();
+    for (const point of tile.keys()) explored_edges.set(point, 0);
     const borders = [];
-    Object.values(tiledata).forEach(hex => {
-      for (let edge = 0; edge < 6; ++edge) {
-        if (hex.edges & (1<<edge) && !(explored_edges[hex.coords] & (1<<edge))) {
-          const start_hex = hex;
-          const start_edge = edge;
+    for (let [point, data] of tile) {
+      for (let i = 0; i < 6; ++i) {
+        if (data.edges & (1<<i) && !(explored_edges.get(point) & (1<<i))) {
+          const start_point = point;
+          const start_edge = i;
           const border = [];
           do {
-            border.push([hex,edge]);
-            explored_edges[hex.coords] |= 1<<edge;
-            edge = (edge+1) % 6;
-            if (!(hex.edges & (1<<edge))) {
-              hex = tiledata[add(hex.coords, Hexagon.moves[edge])];
-              edge = (edge+4) % 6;
+            border.push([point,i]);
+            explored_edges.set(point, explored_edges.get(point) | (1<<i));
+            i = (i+1) % 6;
+            if (!(data.edges & (1<<i))) {
+              point = this.step(point, i);
+              data = tile.get(point);
+              i = (i+4) % 6;
             }
-          } while (hex !== start_hex || edge !== start_edge);
+          } while (!deepEqual(point, start_point) || i !== start_edge);
           borders.push(border);
         }
       }
-    });
+    };
     return borders;
   }
 
-  static getPerimeter(tiledata, borders=null) {
-    if (!Hexagon.isConnected(tiledata)) throw new Error('Improper Usage: Tile is not connected');
-    if (!borders) borders = Hexagon.getBorders(tiledata);
+  static getPerimeter(tile, borders=null) {
+    if (!this.isConnected(tile)) throw new Error('Improper Usage: Tile is not connected');
+    if (!borders) borders = this.getBorders(tile);
     if (borders.length === 1) return borders[0];
-    let min_coords = [Infinity,Infinity];
-    let max_coords = [-Infinity,-Infinity];
+    let min_point = [Infinity,Infinity];
+    let max_point = [-Infinity,-Infinity];
     let perimeter;
-    borders.forEach(border => border.forEach(([{coords},edge]) => {
-      const edge_coords = add(coords, Hexagon.moves[edge]);
-      if (smaller(edge_coords, min_coords).includes(true)) {
-        min_coords = min([edge_coords, min_coords], 0);
-        perimeter = border;
+    for (const border of borders) {
+      for (const [point, edge] of border) {
+        const edge_point = this.step(point, edge);
+        if (smaller(edge_point, min_point).includes(true)) {
+          min_point = min([edge_point, min_point], 0);
+          perimeter = border;
+        }
+        if (larger(edge_point, max_point).includes(true)) {
+          max_point = max([edge_point, max_point], 0);
+          perimeter = border;
+        }
       }
-      if (larger(edge_coords, max_coords).includes(true)) {
-        max_coords = max([edge_coords, max_coords], 0);
-        perimeter = border;
-      }
-    }));
+    }
     return perimeter;
   }
 
-  static getHoles(tiledata) {
-    const borders = Hexagon.getBorders(tiledata);
-    const perimeter = Hexagon.getPerimeter(tiledata, borders);
+  static getHoles(tile) {
+    const borders = this.getBorders(tile);
+    const perimeter = this.getPerimeter(tile, borders);
     return borders.filter(border => border !== perimeter);
   }
 
-  static hasHoles(tiledata) {
-    return Hexagon.getBorders(tiledata).length > 1;
+  static hasHoles(tile) {
+    return this.isConnected(tile) && this.getBorders(tile).length > 1;
   }
 
   static visibleInBox(t,r,b,l) {
@@ -228,16 +307,15 @@ class Hexagon extends React.PureComponent {
     };
   }
 
-  static getOutline(tiledata) {
+  static getOutline(tile) {
     const points = [];
-    const perimeter = Hexagon.getPerimeter(tiledata);
-    perimeter.reduce((prev_hex, [hex,edge]) => {
-      const {coords} = hex;
-      const center = multiply(hexconst.spacing, coords);
-      if (hex !== prev_hex)
-        points.push(add(center, hexconst.border_vertices_between[(edge+5)%6]));
-      points.push(add(center, hexconst.border_vertices[edge]));
-      return hex;
+    const perimeter = this.getPerimeter(tile);
+    perimeter.reduce((prev_point, [point, i]) => {
+      const center = multiply(hexconst.spacing, point);
+      if (!deepEqual(point, prev_point))
+        points.push(add(center, hexconst.border_vertices_between[(i+5)%6]));
+      points.push(add(center, hexconst.border_vertices[i]));
+      return point;
     }, perimeter[perimeter.length-1][0]);
     return (
       <svg className='hex-outline'>
@@ -247,7 +325,7 @@ class Hexagon extends React.PureComponent {
     );
   }
 
-  static renderTile(tiledata) {
+  static renderTile(tile) {
 
     return (
       <svg>
@@ -261,21 +339,24 @@ class Hexagon extends React.PureComponent {
       color,
       x, y,
       style,
+      draggable=false,
       ...other
     } = this.props;
-    Object.entries(other).forEach(([key,val]) => {
+    const point = [x,y];
+    for (const [key, val] of Object.entries(other)) {
       if (key.startsWith('on') && typeof val === 'function')
-        other[key] = e => val(e, [x,y])
-    });
+        other[key] = e => val(e, point);
+    }
     const derived_className = ['Hexagon'];
     if (className) derived_className.push(className);
     const derived_style = {...style,
       transform: 'translate(-50%,-50%)' +
-        `translate(${multiply(hexconst.spacing, [x,y]).join('px,')}px`
+        `translate(${multiply(hexconst.spacing, point).join('px,')}px`
     };
+    if (style?.transform) derived_style.transform += style.transform;
     if (color) derived_style.backgroundColor = color;
     return (
-      <div className={derived_className.join(' ')} draggable={false}
+      <div className={derived_className.join(' ')} draggable={draggable}
       style={derived_style}
       {...other}/>
     );
