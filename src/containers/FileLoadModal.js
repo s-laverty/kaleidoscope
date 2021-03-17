@@ -23,7 +23,8 @@ class FileLoadModal extends React.Component {
     });
   }
 
-  handleSubmit() {
+  handleSubmit(e) {
+    e.preventDefault();
     if (this.file_input.current.files.length) {
       this.setState({is_loading: true});
       const file = this.file_input.current.files[0];
@@ -52,12 +53,12 @@ class FileLoadModal extends React.Component {
     return (
       <Modal
         title='Load File'
-        handleClose={() => this.handleClose()}
+        handleClose={this.handleClose}
       >
         <div className='FileLoadModal flex-center'>
           <div className='content'>
           <form action='' disabled={this.state.is_loading}
-          onSubmit={e => {this.handleSubmit(); e.preventDefault();}}>
+          onSubmit={this.handleSubmit}>
             <label htmlFor='file'>Please select a valid JSON file:</label><br/>
             <input name='file' ref={this.file_input}
             type='file' accept='.json,application/json'

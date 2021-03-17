@@ -10,11 +10,13 @@ class FileSaveModal extends React.Component {
       will_download: false
     }
     this.handleClose = () => props.handleToolbar('set-file-operation', null);
+    this.handleSubmit = this.handleSubmit.bind(this);
     this.filename_input = React.createRef();
     this.download_link = React.createRef();
   }
 
-  handleSubmit() {
+  handleSubmit(e) {
+    e.preventDefault();
     const fileURI = this.props.handleToolbar('get-save-uri');
     this.setState({fileURI: fileURI, will_download: true});
   }
@@ -27,7 +29,7 @@ class FileSaveModal extends React.Component {
       >
         <div className='FileSaveModal flex-center'>
           <form action=''
-          onSubmit={e => {this.handleSubmit(); e.preventDefault();}}>
+          onSubmit={this.handleSubmit}>
             <label htmlFor='filename'>Filename: </label>
             <input name='filename' type='text' ref={this.filename_input}
             value={this.state.filename}
