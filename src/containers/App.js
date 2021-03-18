@@ -480,12 +480,20 @@ class App extends React.Component {
   }
   componentDidUpdate() {
     this.setState(state => {
+      const current = state[state.mode];
       if (state.mode === 'hex-freestyle') {
-        const current = state['hex-freestyle'];
         if (current.active_option === 'change-color-click') {
           return {
             'hex-freestyle': {...current,
               active_option: 'change-color'
+            }
+          };
+        }
+      } else if (state.mode === 'hex-tessellate') {
+        if (current.active_option === 'reset-tile-colors') {
+          return {
+            'hex-tessellate': {...current,
+              active_option: null
             }
           };
         }

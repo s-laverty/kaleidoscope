@@ -127,11 +127,11 @@ class DisplayArea extends React.Component {
           }
         }
         else if (this.props.mode === 'hex-tessellate') {
+          if (current.active_tool === 'reset-tile-colors') this.hex_tile_colors.clear();
           if (current.active_tessellation_index !== null) {
             for (let coords of Hexagon.getTilesInWindow([[l_px,t_px],[r_px,b_px]],
             current.tessellations[current.active_tessellation_index])) {
               const [x,y] = coords;
-              if (!x && !y) continue;
               let color = this.hex_tile_colors.get(coords);
               if (!color) {
                 color = `#${Math.floor(Math.random()*(1<<(8*3))).toString(16).padStart(6,'0')}`;
@@ -141,33 +141,34 @@ class DisplayArea extends React.Component {
                 tile={current.tiledata} color_override={color}/>
               );
             }
-          }
-          for (let [coords, data] of current.tiledata) {
-            const [x,y] = coords;
-            let color;
-            let action;
-            let className;
-            if (current.active_tool === 'tile-shape') {
-              if (!x && !y) {
-                className = 'confirm';
-                action='tile-confirm';
-              } else if (data.edges) {
-                className = 'remove';
-                action='tile-remove';
-              } else color = 'blue';
-            } else color = data.color ?? 'lightgray';
-            this.hex_actions.set(coords, action);
-            hexes.push(<Hexagon key={coords} color={color} x={x} y={y}
-              className={className} onClick={this.handleHexEvent}/>
-            );
-          }
-          if (current.active_tool === 'tile-shape') {
-            for (let coords of current.adjacent) {
+          } else {
+            for (let [coords, data] of current.tiledata) {
               const [x,y] = coords;
-              this.hex_actions.set(coords, 'tile-add');
-              hexes.push(<Hexagon key={coords} x={x} y={y}
-                className={'add'} onClick={this.handleHexEvent}/>
+              let color;
+              let action;
+              let className;
+              if (current.active_tool === 'tile-shape') {
+                if (!x && !y) {
+                  className = 'confirm';
+                  action='tile-confirm';
+                } else if (data.edges) {
+                  className = 'remove';
+                  action='tile-remove';
+                } else color = 'blue';
+              } else color = data.color ?? 'lightgray';
+              this.hex_actions.set(coords, action);
+              hexes.push(<Hexagon key={coords} color={color} x={x} y={y}
+                className={className} onClick={this.handleHexEvent}/>
               );
+            }
+            if (current.active_tool === 'tile-shape') {
+              for (let coords of current.adjacent) {
+                const [x,y] = coords;
+                this.hex_actions.set(coords, 'tile-add');
+                hexes.push(<Hexagon key={coords} x={x} y={y}
+                  className={'add'} onClick={this.handleHexEvent}/>
+                );
+              }
             }
           }
         }

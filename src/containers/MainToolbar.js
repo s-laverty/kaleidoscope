@@ -126,13 +126,18 @@ const MainToolbar = props => {
               title='Ctrl+y'
             />
           </>}
-          {mode === 'hex-tessellate' &&
+          {mode === 'hex-tessellate' && <>
             <ToolbarButton
               text='Tile Shape'
               selected={current.active_tool === 'tile-shape'}
               onClick={() => handleToolbar('tile-shape')}
             />
-          }
+            <ToolbarButton
+              text='Reset Colors'
+              disabled={current.active_tessellation_index === null}
+              onClick={() => handleToolbar('set-tool', 'reset-tile-colors')}
+            />
+          </>}
         </div>
       </div>
       {file_operation === 'save' &&
