@@ -5,21 +5,21 @@
   color: white;
   &::before {
     content: '';
-    position: relative;
     width: 100%;
     height: 100%;
     margin-right: -100%;
     margin-bottom: -100%;
     background-color: var(--toolbar-background);
-    z-index: -1;
   }
   & > span.title {
     font-size: 2em;
     padding: .1em 1em;
+    user-select: none;
+    flex: 0 0 auto;
   }
   & > .toolbar-wrapper {
-    flex-grow: 1;
-    max-width: 100%;
+    flex: 1 0;
+    min-width: 0;
     height: calc(4em + 20px);
     display: flex;
     flex-direction: row;
@@ -33,10 +33,8 @@
       padding: .2em 0;
       overflow-x: auto;
       overflow-y: hidden;
-      & > * {
-        flex-shrink: 0;
-      }
       & > .ToolbarButton {
+        flex-shrink: 0;
         min-width: 4.5em;
         margin: 0 .2em;
       }

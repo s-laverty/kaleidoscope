@@ -7,17 +7,17 @@ const ModeDropdown = props => (
     className='ModeDropdown'
     title='Mode'
     collapsed={props.collapsed}
-    handleToggle={() => props.handleToolbar('dropdown-toggle', 'mode')}
+    handleToggle={() => props.handleToolbar('set-dropdown', 'mode')}
   >
     <ToolbarButton
       text='Hexagon Freestyle'
       selected={props.mode === 'hex-freestyle'}
-      onClick={() => props.handleToolbar('mode-switch', 'hex-freestyle')}
+      onClick={() => props.handleToolbar('set-mode', 'hex-freestyle')}
     />
     <ToolbarButton key={'save'}
       text='Hexagon Tessellation'
       selected={props.mode === 'hex-tessellate'}
-      onClick={() => props.handleToolbar('mode-switch', 'hex-tessellate')}
+      onClick={() => props.handleToolbar('set-mode', 'hex-tessellate')}
     />
   </ToolbarDropdown>
 );
