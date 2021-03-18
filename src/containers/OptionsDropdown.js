@@ -12,67 +12,61 @@ class OptionsDropdown extends React.Component {
   }
 
   render() {
-    let disabled=false;
-    let force_open = false;
-    const current = this.props.current;
-    const buttons = [];
-    if (current.active_tool === 'color') {
-      buttons.push(
-        <ToolbarButton key={'change-color'}
-          text='Change Color'
-          icon={{border: true, src: ColorPickerIcon}}
-          selected={current.active_option === 'change-color'}
-          onClick={() => this.props.handleToolbar('change-color-click')}
-        >
-          <input type='color' ref={this.color_picker_input}
-            value={current.color_picker_value}
-            onClick={e => e.stopPropagation()}
-            onChange={e => this.props.handleToolbar('change-color', e.target.value)}
-          />
-        </ToolbarButton>,
-        <ToolbarButton key={'ink-dropper'}
-          text='Ink Dropper'
-          selected={current.active_option === 'ink-dropper'}
-          onClick={() => this.props.handleToolbar('ink-dropper')}
-        />,
-        <ToolbarButton key={'remove-color'}
-          text='Remove Color'
-          icon={{
-            src: RedX, style: {backgroundColor: 'white'}
-          }}
-          onClick={() => this.props.handleToolbar('remove-color')}
-        />
-      );
-      if (current.active_option === 'change-color') force_open = true;
-    } else if (current.active_tool === 'erase') {
-      buttons.push(
-        <ToolbarButton key={'clear-all'}
-          text='Clear All'
-          icon={{
-            src: RedX, style: {backgroundColor: 'white'}
-          }}
-          onClick={() => this.props.handleToolbar('clear-all')}
-        />
-      );
-    } else disabled = true;
+    const {current, handleToolbar} = this.props;
+    const {active_tool, active_option} = current;
     return (
       <ToolbarDropdown
         className='OptionsDropdown'
         title='Options'
         collapsed={this.props.collapsed}
-        handleToggle={() => this.props.handleToolbar('dropdown-toggle', 'options')}
-        disabled={disabled}
-        force_open={force_open}
+        handleToggle={() => handleToolbar('set-dropdown', 'options')}
+        disabled={!['color', 'erase'].includes(active_tool)}
+        force_open={active_option === 'change-color'}
       >
-        {buttons}
+        {active_tool === 'color' && <>
+          <ToolbarButton
+            text='Change Color'
+            icon={{border: true, src: ColorPickerIcon}}
+            selected={active_option === 'change-color'}
+            onClick={() => handleToolbar('set-option', 'change-color-click')}
+          >
+            <input type='color' ref={this.color_picker_input}
+              value={current.colors[current.active_color_index]}
+              onClick={e => e.stopPropagation()}
+              onChange={e => handleToolbar('change-color', e.target.value)}
+            />
+          </ToolbarButton>
+          <ToolbarButton
+            text='Ink Dropper'
+            selected={active_option === 'ink-dropper'}
+            onClick={() => handleToolbar('set-option', 'ink-dropper')}
+          />
+          <ToolbarButton
+            text='Remove Color'
+            icon={{
+              src: RedX, style: {backgroundColor: 'white'}
+            }}
+            onClick={() => handleToolbar('remove-color')}
+          />
+        </>}
+        {active_tool === 'remove' &&
+          <ToolbarButton
+            text='Clear All'
+            icon={{
+              src: RedX, style: {backgroundColor: 'white'}
+            }}
+            onClick={() => handleToolbar('clear-all')}
+          />
+        }
       </ToolbarDropdown>
     );
   }
 
   componentDidUpdate() {
-    if (this.props.current.active_option === 'change-color-click') {
+    const {current: {active_option}, handleToolbar} = this.props;
+    if (active_option === 'change-color-click') {
       this.color_picker_input.current.onchange =
-        () => this.props.handleToolbar('change-color-close');
+        () => handleToolbar('set-option', null);
       this.color_picker_input.current.click();
     }
   }
