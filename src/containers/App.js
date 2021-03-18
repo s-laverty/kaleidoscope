@@ -490,10 +490,10 @@ class App extends React.Component {
           };
         }
       } else if (state.mode === 'hex-tessellate') {
-        if (current.active_option === 'reset-tile-colors') {
+        if (current.active_tool === 'reset-tile-colors') {
           return {
             'hex-tessellate': {...current,
-              active_option: null
+              active_tool: null
             }
           };
         }
