@@ -2,6 +2,8 @@ import React from 'react';
 import './Hexagon.scss';
 import { multiply, transpose, add, subtract, smaller, larger, min, max,
   deepEqual, lup, ceil, lusolve, floor, flatten } from 'mathjs';
+import CustomMap from './utils/CustomMap';
+import CustomSet from './utils/CustomSet';
 
 const hexconst = {
   shape: transpose([
@@ -36,112 +38,430 @@ hexconst.border_vertices_concave = add(hexconst.border_vertices,
   )
 );
 
-class Hexagon extends React.PureComponent {
-
-  static Map = (map => class {
-    constructor(iterable) {
-      if (iterable instanceof Hexagon.Map)
-        this[map] = new Map(iterable[map]);
-      else {
-        this[map] = new Map();
-        if (iterable) for (let entry of iterable) this.set(...entry);
-      }
-    }
-    get size() { return this[map].size; }
-    clear() { this[map].clear(); }
-    delete(point) { return this[map].delete(point?.toString()); }
-    get(point) { return this[map].get(point?.toString())?.[1]; }
-    has(point) { return this[map].has(point?.toString()); }
-    set(point, value) {
-      this[map].set(point?.toString(), [point, value]);
-      return this;
-    }
-    [Symbol.iterator]() { return this.entries(); }
-    *keys() { for (let [point] of this.entries()) yield point; }
-    *values() { for (let [,value] of this.entries()) yield value; }
-    entries() { return this[map].values(); }
-    forEach(callbackFn, thisArg=this) {
-      for (let [point, value] of this.entries())
-        callbackFn.call(thisArg, value, point);
-    }
-  })(Symbol('map'));
-
-  static Set = (map => class {
-    constructor(iterable) {
-      if (iterable instanceof Hexagon.Set)
-        this[map] = new Hexagon.Map(iterable[map]);
-      else {
-        this[map] = new Hexagon.Map();
-        if (iterable) for (let point of iterable) this.add(point);
-      }
-    }
-    get size() { return this[map].size; }
-    add(point) {
-      this[map].set(point, point);
-      return this;
-    }
-    clear() { this[map].clear(); }
-    delete(point) { return this[map].delete(point); }
-    has(point) { return this[map].has(point); }
-    [Symbol.iterator]() { return this.values(); }
-    keys() { return this.values(); }
-    values() { return this[map].keys(); }
-    entries() { return this[map].entries(); }
-    forEach(callbackFn, thisArg=this) {
-      for (let point of this.values())
-        callbackFn.call(thisArg, point);
-    }
-  })(Symbol('map'));
-
-  static add(p1, p2) {
-    return add(p1, p2);
+export class Point extends Array {
+  static steps = Object.freeze([
+    [1,0], [0,1], [-1,1], [-1,0], [0,-1], [1,-1]
+  ].map(Object.freeze));
+  static equal(p1, p2) { return deepEqual(p1, p2); }
+  constructor(point) {
+    super(...point);
+    this.key = super.toString();
+    Object.freeze(this);
   }
-
-  static subtract(p1, p2) {
-    return subtract(p1, p2);
+  toString() { return this.key; }
+  equals(other) { return Point.equal(this, other); }
+  add(other) { return new Point(add(this, other)); }
+  subtract(other) { return new Point(subtract(this, other)); }
+  step(i) { return this.add(Point.steps[i]); }
+  forEachAdjacent(callback) {
+    for (let i = 0; i < 6; ++i) callback(this.step(i), i);
   }
-
-  static steps = [
-    [1,0],
-    [0,1],
-    [-1,1],
-    [-1,0],
-    [0,-1],
-    [1,-1]
-  ];
-
-  static step(point, i) {
-    return this.add(point, this.steps[i])
-  }
-
-  static forEachAdjacent(point, callback) {
-    for (let i = 0; i < 6; ++i) {
-      const other_point = this.step(point, i);
-      callback(other_point, i);
-    }
-  }
-
-  static someAdjacent(point, test) {
-    for (let i = 0; i < 6; ++i) {
-      const other_point = this.step(point, i);
-      if (test(other_point, i)) return true;
-    }
+  someAdjacent(test) {
+    for (let i = 0; i < 6; ++i) if (test(this.step(i), i)) return true;
     return false;
   }
-
-  static everyAdjacent(point, test) {
-    return !this.someAdjacent(point, (...args) => !test(...args));
+  everyAdjacent(test) {
+    return this.someAdjacent(...args => !test(...args));
   }
-
-  static isAdjacent(p1, p2) {
-    return this.someAdjacent(p1, point => deepEqual(point, p2));
+  adjacentTo(other) {
+    return this.someAdjacent(adj_point => deepEqual(adj_point, other));
   }
+}
 
+export const PointMap = (() => {
+  const hashFn = point => point.key;
+  return class extends CustomMap {
+    static Point = Point;
+    constructor(entries) {
+      super(entries, hashFn);
+    }
+  };
+})();
+
+export const PointSet = (() => {
+  const hashFn = point => point.key;
+  return class extends CustomSet {
+    static Point = Point;
+    constructor(entries) {
+      super(entries, hashFn);
+    }
+  };
+})();
+
+export const Tile = (() => {
+  class Component {
+    static borderNode(point, edges) {
+      let concavity = 0;
+      let next = [];
+      for (let i = 0, j = 5; i < 6; j = i++) {
+        if (edges & (1<<i)) {
+          if (edges & (1<<j)) ++concavity;
+          else --concavity;
+        } else if (edges & (1<<j)) next.push(point.step(i));
+      }
+      return {edges: edges, concavity: concavity, next: next};
+    }
+    constructor(start) {
+      if (start instanceof Component) {
+        this.points = new PointSet(start.points);
+        this.borders = new Set();
+        this.borders_by_point = new PointMap();
+        for (let border of start.borders) {
+          let is_perimeter = border === start.perimeter;
+          border = new PointMap(border);
+          if (is_perimeter) this.perimeter = border;
+          this.borders.add(border);
+          for (let point of border.keys())
+            this.borders_by_point.set(point, border);
+        }
+      } else {
+        this.points = new PointSet([start]);
+        this.perimeter = new PointMap();
+        this.borders = new Set([this.perimeter]);
+        this.borders_by_point = new PointMap();
+        start.forEachAdjacent((point, i) => {
+          this.perimeter.set(point, Component.borderNode(point, 1<<(i+3)%6));
+          this.borders_by_point.set(point, this.perimeter);
+        });
+      }
+    }
+    get size() { return this.points.size; }
+    add(point) {
+      let border = this.borders_by_point.get(point);
+      if (!border) throw new Error("Can't add a non-adjacent point to this component");
+      this.borders_by_point.delete(point);
+      let node = border.get(point);
+      border.delete(point);
+      if (border.size) {
+        for (let i = 0; i < 6; ++i) {
+          if (node.edges & (1<<i)) continue;
+          let adj_point = point.step(i);
+          let edges = border.get(adj_point)?.edges ?? 0;
+          if (!edges) this.borders_by_point.set(adj_point, border);
+          border.set(adj_point, Component.borderNode(adj_point, edges | (1<<(i+3)%6)));
+        }
+      } else this.borders.delete(border);
+      for (let start_point of node.next.slice(1)) this.splitBorder(border, start_point);
+      this.points.add(point);
+      return this;
+    }
+    delete(point) {
+      if (!this.points.delete(point))
+        throw new Error("Can't delete a point that's not in this component");
+      let border = this.borders_by_point.get(point.step(5));
+      let edges = border ? 0 : 1<<5;
+      let to_split = [];
+      let split_next = Boolean(border);
+      let first_split = true;
+      for (let i = 0, j = 5; i < 6; j = i++) {
+        let adj_point = point.step(i);
+        if (!this.has(adj_point)) {
+          if (edges & (1<<j)) {
+            let adj_border = this.borders_by_point.get(adj_point);
+            if (!border) border = adj_border;
+            if (adj_border !== border) {
+              this.mergeBorder(adj_border, border);
+              this.borders.delete(adj_border);
+              if (this.perimeter === adj_border) this.perimeter = border;
+            } else split_next = true;
+          }
+          let adj_edges = border.get(adj_point).edges & ~(1<<(i+3)%6);
+          if (!adj_edges) {
+            border.delete(adj_point);
+            this.borders_by_point.delete(adj_point);
+          } else border.set(adj_point, Component.borderNode(adj_point, adj_edges));
+        } else {
+          edges |= 1<<i;
+          if (split_next) {
+            if (first_split) first_split = false;
+            else to_split.push(adj_point);
+            split_next = false;
+          }
+        }
+      }
+      if (!edges) throw new Error("Can't delete the only point in this component");
+      if (!border) {
+        border = new PointMap();
+        this.borders.add(border);
+      }
+      border.set(point, Component.borderNode(point, edges));
+      this.borders_by_point.set(point, border);
+      return to_split.map(start_point => this.split(border, start_point));
+    }
+    has(point) { return this.points.has(point); }
+    [Symbol.iterator]() { return this.points[Symbol.iterator](); }
+    splitBorder(src, start_point) {
+      let dest = new PointMap();
+      this.borders.add(dest);
+      let concavity = 0;
+      const explore = point => {
+        let node = src.get(point);
+        if (node) {
+          src.delete(point);
+          dest.set(point, node);
+          this.borders_by_point.set(point, dest);
+          concavity += node.concavity;
+          node.next.forEach(explore);
+        }
+      }
+      explore(start_point);
+      if (concavity < 0) this.perimeter = dest;
+      return dest;
+    }
+    mergeBorder(src, dest) {
+      for (let [point, node] of src) {
+        let old_edges = dest.get(point)?.edges;
+        if (old_edges) node = Component.borderNode(point, old_edges | node.edges);
+        dest.set(point, node);
+        this.borders_by_point.set(point, dest);
+      }
+    }
+    split(border, start_point) {
+      let dest = Object.create(Component.prototype);
+      let new_border = new PointMap();
+      dest.points = new PointSet();
+      dest.borders = new Set([new_border]);
+      dest.borders_by_point = new PointMap();
+      const explore = point => {
+        if (this.points.delete(point)) {
+          dest.points.add(point);
+          point.forEachAdjacent((adj_point, i) => {
+            let adj_border = this.borders_by_point.get(adj_point);
+            if (adj_border) {
+              if (adj_border !== border) {
+                this.borders.delete(adj_border);
+                dest.borders.add(adj_border);
+                for (let point of adj_border.keys()) {
+                  this.borders_by_point.delete(point);
+                  dest.borders_by_point.set(point, adj_border);
+                }
+              } else new_border.set(adj_point,
+                (new_border.get(adj_point) ?? 0) | (1<<(i+3)%6));
+            } else explore(adj_point);
+          });
+        }
+      }
+      explore(start_point);
+      let concavity = 0;
+      for (let [point, edges] of new_border) {
+        let old_edges = border.get(point).edges & ~edges;
+        if (!old_edges) {
+          border.delete(point);
+          this.borders_by_point.delete(point);
+        } else border.set(point, Component.borderNode(point, old_edges));
+        let node = Component.borderNode(point, edges);
+        concavity += node.concavity;
+        new_border.set(point, node);
+        dest.borders_by_point.set(point, new_border);
+      }
+      if (concavity > 0) {
+        dest.perimeter = this.perimeter;
+        this.perimeter = border;
+      } else dest.perimeter = new_border;
+      return dest;
+    }
+    merge(src, start_point) {
+      let src_border = src.borders_by_point.get(start_point);
+      let merged_border;
+      let to_split = [];
+      let split_next = src.has(start_point.step(5));
+      let first_split = true;
+      for (let i = 0; i < 6; ++i) {
+        let adj_point = start_point.step(i);
+        if (src.has(adj_point)) {
+          if (!merged_border) {
+            merged_border = this.borders_by_point.get(adj_point);
+            this.mergeBorder(src_border, merged_border);
+            merged_border.delete(start_point);
+            this.borders_by_point.delete(start_point);
+          }
+          merged_border.delete(adj_point);
+          this.borders_by_point.delete(adj_point);
+          split_next = true;
+        } else if (split_next) {
+          if (first_split) first_split = false;
+          else to_split.push(adj_point);
+          split_next = false;
+        }
+      }
+      for (let point of src) this.points.add(point);
+      for (let border of src.borders) {
+        if (border !== src_border) {
+          let is_perimeter = border === src.perimeter;
+          border = new PointMap(border);
+          if (is_perimeter) this.perimeter = border;
+          this.borders.add(border);
+          for (let point of border.keys())
+            this.borders_by_point.set(point, border);
+        }
+      }
+      for (let start_point of to_split) this.splitBorder(merged_border, start_point);
+    }
+  }
+  const edges = Symbol('edges'),
+    adjacent = Symbol('adjacent'),
+    components = Symbol('components'),
+    components_by_point = Symbol('components_by_point'),
+    trace_border = Symbol('trace-border');
+  return class extends PointMap {
+    constructor(entries) {
+      if (entries instanceof Tile) {
+        super(entries);
+        this[edges] = new PointMap(entries[edges]);
+        this[adjacent] = new PointMap(entries[adjacent]);
+        this[components] = new Set();
+        this[components_by_point] = new PointMap();
+        for (let component of entries[components]) {
+          component = new Component(component);
+          this[components].add(component);
+          for (let point of component)
+            this[components_by_point].set(point, component);
+        }
+      } else {
+        super();
+        this[edges] = new PointMap();
+        this[adjacent] = new PointMap();
+        this[components] = new Set();
+        this[components_by_point] = new PointMap();
+        if (entries) for (let [point, data] of entries) this.set(point, data);
+      }
+    }
+    clear() {
+      super.clear();
+      this[edges].clear();
+      this[adjacent].clear();
+      this[components].clear();
+      this[components_by_point].clear();
+    }
+    delete(point) {
+      if (super.delete(point)) {
+        this[edges].delete(point);
+        let new_edges = 0;
+        point.forEachAdjacent((adj_point, i) => {
+          if (!this.has(adj_point)) {
+            let adj_edges = this[adjacent].get(adj_point) & ~(1<<(i+3)%6);
+            if (!adj_edges) this[adjacent].delete(adj_point);
+            else this[adjacent].set(adj_point, adj_edges);
+          } else {
+            new_edges |= 1<<i;
+            this[edges].set(adj_point,
+              (this[edges].get(adj_point) ?? 0) | (1<<(i+3)%6));
+          }
+        });
+        let component = this[components_by_point].get(point);
+        this[components_by_point].delete(point);
+        if (new_edges) {
+          this[adjacent].set(point, new_edges);
+          for (let new_component of component.delete(point)) {
+            this[components].add(new_component);
+            for (let point of new_component)
+              this[components_by_point].set(point, new_component);
+          }
+        } else this[components].delete(component);
+        return true;
+      } else return false;
+    }
+    set(point, data) {
+      if (!this.has(point)) {
+        this[adjacent].delete(point);
+        let new_edges = 0;
+        let component;
+        point.forEachAdjacent((adj_point, i) => {
+          let adj_edges = this[edges].get(adj_point) & ~(1<<(i+3)%6);
+          if (!adj_edges) this[edges].delete(adj_point);
+          else this[edges].set(adj_point, adj_edges);
+          let adj_component = this[components_by_point].get(adj_point);
+          if (adj_component) {
+            if (!component) {
+              component = adj_component;
+              component.add(point);
+            } else if (adj_component !== component) {
+              component.merge(adj_component, point);
+              this[components].delete(adj_component);
+              for (let point of adj_component)
+                this[components_by_point].set(point, component);
+            }
+          } else {
+            new_edges |= 1<<i;
+            this[adjacent].set(adj_point,
+              (this[adjacent].get(adj_point) ?? 0) | (1<<(i+3)%6));
+          }
+        });
+        if (new_edges) this[edges].set(point, new_edges);
+        if (!component) {
+          component = new Component(point);
+          this[components].add(component);
+        }
+        this[components_by_point].set(point, component);
+      }
+      super.set(point, data);
+    }
+    [trace_border](start_point, start_edge) {
+      let border = [];
+      let point = start_point,
+        current_edges = this[edges].get(start_point),
+        i = start_edge;
+      do {
+        border.push([point, i]);
+        i = (i+1)%6;
+        if (!(current_edges & (1<<i))) {
+          point = point.step(i);
+          current_edges = this[edges].get(point);
+          i = (i+4)%6;
+        }
+      } while (!point.equals(start_point) || i !== start_edge);
+      return border;
+    }
+    edges() {
+      return this[edges].keys();
+    }
+    adjacent() {
+      return this[adjacent].keys();
+    }
+    isConnected() {
+      return this[components].size === 1;
+    }
+    perimeter() {
+      if (!this.isConnected())
+        throw new Error('Improper usage: perimeter() must operate on a connected tile');
+      let component = this[components].values().next().value;
+      let [adj_point, {edges: adj_edges}] = component.perimeter.entries().next().value;
+      let start_point, start_edge;
+      for (let i = 0; i < 6; ++i) {
+        if (adj_edges & (1<<i)) {
+          start_point = adj_point.step(i);
+          start_edge = (i+3)%6;
+          break;
+        }
+      }
+      return this[trace_border](start_point, start_edge);
+    }
+    holes() {
+      if (!this.isConnected()) {
+        for (let component of this[components]) {
+
+        }
+      }
+    }
+  };
+})();
+
+class Hexagon extends React.PureComponent {
   static translate(tile, translate) {
-    const translated = new this.Map();
+    const translated = new this.Tile();
     for (const [point, data] of tile)
       translated.set(this.add(point, translate), data);
     return translated;
+  }
+
+  static getBounds(tile) {
+    let min_dims = [-Infinity, -Infinity];
+    let max_dims = [Infinity, Infinity];
+    for (const point of tile.keys()) {
+      min_dims = min([point, min_dims], 0);
+      max_dims = max([point, max_dims], 0);
+    }
+    return [min_dims, max_dims];
   }
 
   static hasOverlap(tile1, tile2, translate=null) {
@@ -167,99 +487,20 @@ class Hexagon extends React.PureComponent {
   }
 
   static merge(...tiles) {
-    const merged = new this.Map();
+    const merged = new this.Tile();
     for (const tile of tiles) {
       for (let [point, data] of tile) {
         if (merged.has(point))
           throw new Error(`Improper Usage: Overlap between hexes at ${point}`);
         merged.set(point, data);
-        this.forEachAdjacent(point, (adj_point, i) => {
-          const adj_data = merged.get(adj_point);
-          if (adj_data && data.edges & (1<<i)) {
-            data = {...data,
-              edges: data.edges & ~(1<<i)
-            };
-            merged.set(point, data);
-            merged.set(adj_point, {...adj_data,
-              edges: adj_data.edges & ~(1<<(i+3)%6)
-            });
-          }
-        });
       }
     }
     return merged;
   }
 
-  static getConnectedPart(tile, start_point) {
-    const part = new this.Map();
-    const start_data = tile.get(start_point);
-    if (start_data) {
-      part.set(start_point, start_data);
-      const queue = [start_point];
-      while (queue.length) {
-        const point = queue.shift();
-        this.forEachAdjacent(point, adj_point => {
-          const adj_data = tile.get(adj_point);
-          if (adj_data && !part.has(adj_point)) {
-            part.set(adj_point, adj_data);
-            queue.push(adj_point);
-          }
-        });
-      }
-    }
-    return part;
-  }
-
-  static getConnectedParts(tile) {
-    const explored = new this.Set();
-    const parts = [];
-    for (const point of tile.keys()) {
-      if (!explored.has(point)) {
-        const part = this.getConnectedPart(tile, point);
-        parts.push(part);
-        for (const point of part.keys()) explored.add(point);
-      }
-    };
-    return parts;
-  }
-
-  static isConnected(tile) {
-    const start_point = tile.keys().next().value;
-    const part = this.getConnectedPart(tile, start_point);
-    for (const point of tile.keys()) if (!part.has(point)) return false;
-    return true;
-  }
-
-  static getBorders(tile) {
-    const explored_edges = new this.Map();
-    for (const point of tile.keys()) explored_edges.set(point, 0);
-    const borders = [];
-    for (let [point, data] of tile) {
-      for (let i = 0; i < 6; ++i) {
-        if (data.edges & (1<<i) && !(explored_edges.get(point) & (1<<i))) {
-          const start_point = point;
-          const start_edge = i;
-          const border = [];
-          do {
-            border.push([point,i]);
-            explored_edges.set(point, explored_edges.get(point) | (1<<i));
-            i = (i+1) % 6;
-            if (!(data.edges & (1<<i))) {
-              point = this.step(point, i);
-              data = tile.get(point);
-              i = (i+4) % 6;
-            }
-          } while (!deepEqual(point, start_point) || i !== start_edge);
-          borders.push(border);
-        }
-      }
-    };
-    return borders;
-  }
-
-  static getPerimeter(tile, borders=null) {
-    if (!this.isConnected(tile)) throw new Error('Improper Usage: Tile is not connected');
-    if (!borders) borders = this.getBorders(tile);
+  static getPerimeter(tile) {
+    if (!tile.isConnected()) throw new Error('Improper Usage: Tile is not connected');
+    const borders = tile.borders();
     if (borders.length === 1) return borders[0];
     let min_point = [Infinity,Infinity];
     let max_point = [-Infinity,-Infinity];
@@ -281,13 +522,13 @@ class Hexagon extends React.PureComponent {
   }
 
   static getHoles(tile) {
-    const borders = this.getBorders(tile);
-    const perimeter = this.getPerimeter(tile, borders);
+    const borders = tile.borders();
+    const perimeter = this.getPerimeter(tile);
     return borders.filter(border => border !== perimeter);
   }
 
   static hasHoles(tile) {
-    return this.isConnected(tile) && this.getBorders(tile).length > 1;
+    return tile.isConnected() && tile.borders().length > 1;
   }
 
   static visibleInBox(t,r,b,l) {
@@ -344,7 +585,7 @@ class Hexagon extends React.PureComponent {
     );
   });
 
-  static Tile = React.memo(props => {
+  static TileRender = React.memo(props => {
     const {
       tile,
       outline=false,
@@ -353,6 +594,7 @@ class Hexagon extends React.PureComponent {
       style
     } = props;
     const hexes = [];
+
     for (let [point, {color='lightgray'}] of tile) {
       if (color_override) color = color_override;
       const center = multiply(hexconst.spacing, point);
@@ -384,7 +626,7 @@ class Hexagon extends React.PureComponent {
       draggable=false,
       ...other
     } = this.props;
-    const point = [x,y];
+    const point = new Point([x,y]);
     for (const [key, val] of Object.entries(other)) {
       if (key.startsWith('on') && typeof val === 'function')
         other[key] = e => val(e, point);
