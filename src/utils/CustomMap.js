@@ -7,6 +7,7 @@ export default (() => {
   const type_methods = [
     {
       clone: function(src) { this[map] = new Map(src[map]); },
+      size: function() { return this[map].size; },
       delete: function(key) { return this[map].delete(key); },
       get: function(key) { return this[map].get(key); },
       has: function(key) { return this[map].has(key); },
@@ -30,6 +31,11 @@ export default (() => {
         for (let [hash_code, bucket] of src[map])
           this[map].set(hash_code, bucket.slice());
       },
+      size: function() {
+        let size = 0;
+        this[map].forEach(bucket => size += bucket.length);
+        return size;
+      },
       delete: function(key) {
         let hash_code = this[hash](key);
         let bucket = this[map].get(hash_code);
@@ -52,42 +58,42 @@ export default (() => {
           this[equal](key, bucket_key)) ?? false;
       },
       set: function(key, value) {
+        let entry = [key, value];
         let hash_code = this[hash](key);
         let bucket = this[map].get(hash_code);
         if (bucket) {
-          let entry = bucket.find(([bucket_key]) => this[equal](key, bucket_key));
-          if (entry) entry[1] = value;
-          else bucket.push([key, value]);
-        } else this[map].set(hash_code, [[key,value]]);
+          let index = bucket.findIndex(([bucket_key]) => this[equal](key, bucket_key));
+          if (index !== -1) bucket[index] = entry;
+          else bucket.push(entry);
+        } else this[map].set(hash_code, [entry]);
       },
       entries: function*() { for (let bucket of this[map].values()) yield* bucket; }
     }
   ];
   type_methods[1].clone = type_methods[0].clone; // Identical behavior for types 0 and 1
+  type_methods[1].size = type_methods[0].size; // Identical behavior for types 0 and 1
   type_methods[2].keys = type_methods[1].keys; // Identical behavior for types 1 and 2
   type_methods[2].values = type_methods[1].values; // Identical behavior for types 1 and 2 
 
   return class CustomMap {
     constructor(entries, hashFn, equalFn) {
       let type = 0;
-      let is_clone = entries instanceof CustomMap;
       if (hashFn) {
         this[hash] = hashFn;
         type = 1;
-        if (is_clone) is_clone = this[hash] === entries[hash];
         if (equalFn) {
           this[equal] = equalFn;
           type = 2;
-          if (is_clone) is_clone = this[equal] === entries[equal];
         }
       }
       this[methods] = type_methods[type];
-      if (!is_clone) {
+      if (!(entries instanceof CustomMap && this[hash] === entries[hash]
+      && this[equal] === entries[equal])) {
         this[map] = new Map();
         if (entries) for (let entry of entries) this.set(...entry);
       } else this[methods].clone.call(this, entries);
     }
-    get size() { return this[map].size; }
+    get size() { return this[methods].size.call(this); }
     clear() { this[map].clear(); }
     delete(key) { return this[methods].delete.call(this, key); }
     get(key) { return this[methods].get.call(this, key); }

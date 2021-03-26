@@ -7,6 +7,7 @@ export default (() => {
   const type_methods = [
     {
       clone: function(src) { this[set] = new Set(src[set]); },
+      size: function() { return this[set].size; },
       add: function(value) { this[set].add(value); },
       delete: function(value) { return this[set].delete(value); },
       has: function(value) { return this[set].has(value); },
@@ -21,8 +22,13 @@ export default (() => {
     {
       clone: function(src) {
         this[set] = new Map();
-        for (let [hash_code, bucket] of src[set])
-          this[set].set(hash_code, bucket.slice());
+        src[set].forEach((bucket, hash_code) =>
+          this[set].set(hash_code, bucket.slice()));
+      },
+      size: function() {
+        let size = 0;
+        this[set].forEach(bucket => size += bucket.length);
+        return size;
       },
       add: function(value) {
         let hash_code = this[hash](value);
@@ -52,29 +58,28 @@ export default (() => {
       values: function*() { for (let bucket of this[set].values()) yield* bucket; }
     }
   ];
+  type_methods[1].size = type_methods[0].size; // Identical behavior for types 0 and 1
   type_methods[1].values = type_methods[0].values; // Identical behavior for types 0 and 1
 
   return class CustomSet {
     constructor(values, hashFn, equalFn) {
       let type = 0;
-      let is_clone = values instanceof CustomSet;
       if (hashFn) {
         this[hash] = hashFn;
         type = 1;
-        if (is_clone) is_clone = this[hash] === values[hash];
         if (equalFn) {
           this[equal] = equalFn;
           type = 2;
-          if (is_clone) is_clone = this[equal] === values[equal];
         }
       }
       this[methods] = type_methods[type];
-      if (!is_clone) {
+      if (!(values instanceof CustomSet && this[hash] === values[hash]
+      && this[equal] === values[equal])) {
         this[set] = type > 0 ? new Map() : new Set();
         if (values) for (let value of values) this.add(value);
       } else this[methods].clone.call(this, values);
     }
-    get size() { return this[set].size; }
+    get size() { return this[methods].size.call(this); }
     add(value) { this[methods].add.call(this, value); return this; }
     clear() { this[set].clear(); }
     delete(value) { return this[methods].delete.call(this, value); }
