@@ -2,31 +2,32 @@ import React from 'react'
 import './App.scss';
 import DisplayArea from './DisplayArea';
 import MainToolbar from './MainToolbar';
-import Hexagon from '../Hexagon';
+import { PointMap, PointSet, Tile } from '../Hexagon';
+
+const VERSION = '0.1.0';
 
 class App extends React.Component {
   static saved_props = {
-    'hex-freestyle': new Set(['tiledata','colors','pan','zoom']),
-    'hex-tessellate': new Set()
+    'hex-freestyle': ['tiledata','colors','pan','zoom'],
+    'hex-tessellate': []
   }
   static default_props = {
+    'hex-tessellate': {
+      tiledata: new Tile([[new Tile.Point(0,0), {}]]),
+      tessellations: [],
+      active_tessellation_index: null,
+      active_tool: 'tile-shape',
+      zoom: 1.0
+    },
     'hex-freestyle': {
-      tiledata: new Hexagon.Map(),
-      history: [{tiledata: new Hexagon.Map()}],
+      tiledata: new PointMap(),
+      history: [{tiledata: new PointMap()}],
       history_index: 0,
       colors: ['#ff0000','#00ff00','#0000ff'],
       active_color_index: null,
       active_tool: null,
       active_option: null,
       pan: {x: 0, y: 0},
-      zoom: 1.0
-    },
-    'hex-tessellate': {
-      tiledata: new Hexagon.Map([[[0,0], {edges: 0b111111}]]),
-      adjacent: new Hexagon.Set(Hexagon.steps),
-      tessellations: [],
-      active_tessellation_index: null,
-      active_tool: 'tile-shape',
       zoom: 1.0
     }
   }
@@ -35,7 +36,7 @@ class App extends React.Component {
     super();
     this.state = {
       active_dropdown: null,
-      mode: 'hex-freestyle',
+      mode: 'hex-tessellate',
       file_operation: null,
       ...App.default_props
     };
@@ -199,7 +200,7 @@ class App extends React.Component {
                 let tile = current.tiledata.get(point);
                 if (tile?.color !== current.colors[current.active_color_index]) {
                   log_change = true;
-                  tiledata = new Hexagon.Map(current.tiledata);
+                  tiledata = new current.tiledata.constructor(current.tiledata);
                   tiledata.set(point, {...tile,
                     color: current.colors[current.active_color_index]
                   });
@@ -213,7 +214,7 @@ class App extends React.Component {
               break;
             case 'erase':
               log_change = true;
-              tiledata = new Hexagon.Map(current.tiledata);
+              tiledata = new current.tiledata.constructor(current.tiledata);
               tiledata.delete(point);
               return {
                 [state.mode]: {...current,
@@ -222,67 +223,27 @@ class App extends React.Component {
               };
             case 'tile-shape':
               if (!action) return;
-              tiledata = new Hexagon.Map(current.tiledata);
-              let adjacent = new Hexagon.Set(current.adjacent);
-              const toggle_edge = (point, i) => {
-                const current = tiledata.get(point);
-                tiledata.set(point, {...current,
-                  edges: current.edges ^ (1<<i)
-                });
-              };
+              tiledata = new current.tiledata.constructor(current.tiledata);
               const fill_hole = point => {
                 if (!(tiledata.has(point))) {
-                  adjacent.delete(point);
-                  tiledata.set(point, {edges: 0});
-                  Hexagon.forEachAdjacent(point, adj_point => fill_hole(adj_point));
+                  tiledata.set(point, {});
+                  point.forEachAdjacent(adj_point => fill_hole(adj_point));
                 }
-              };
-              const remove_adjacent = point => {
-                Hexagon.forEachAdjacent(point, adj_point => {
-                  if (adjacent.has(adj_point) && !Hexagon.someAdjacent(adj_point,
-                    point => tiledata.has(point)
-                  )) adjacent.delete(adj_point);
-                });
               };
               switch(action) {
                 case 'tile-add':
-                  tiledata.set(point, {edges: 0});
-                  adjacent.delete(point);
-                  Hexagon.forEachAdjacent(point, (adj_point, i) => {
-                    if (tiledata.has(adj_point)) toggle_edge(adj_point, (i+3)%6);
-                    else {
-                      adjacent.add(adj_point);
-                      tiledata.get(point).edges |= 1<<i;
-                    }
-                  });
-                  for (const hole of Hexagon.getHoles(tiledata)) {
-                    for (const [point, edge] of hole) toggle_edge(point, edge);
-                    const [start_point, start_edge] = hole[0];
-                    fill_hole(Hexagon.step(start_point, start_edge));
-                  }
+                  tiledata.set(point, {});
+                  tiledata.holes().forEach(hole =>
+                    fill_hole(hole[0][0].step(hole[0][1])));
                   break;
                 case 'tile-remove':
                   tiledata.delete(point);
-                  adjacent.add(point);
-                  Hexagon.forEachAdjacent(point, (adj_point, i) =>
-                    tiledata.has(adj_point) && toggle_edge(adj_point, (i+3)%6)
-                  );
-                  remove_adjacent(point);
-                  for (const connected_part of Hexagon.getConnectedParts(tiledata)) {
-                    if (connected_part.has([0,0])) continue;
-                    for (const point of connected_part.keys()) {
-                      tiledata.delete(point);
-                      remove_adjacent(point);
-                    }
-                  }
+                  if (!tiledata.isConnected())
+                    tiledata = tiledata.getComponent(new Tile.Point(0,0));
                   break;
                 default: console.warn(`Unrecognized tile-shape action: ${action}`);
               }
-              return {
-                [state.mode]: {...current,
-                  tiledata: tiledata, adjacent: adjacent
-                }
-              };
+              return {[state.mode]: {...current, tiledata: tiledata}};
             default: break;
           }
         }, () => log_change && this.saveState());
@@ -374,16 +335,21 @@ class App extends React.Component {
   }
 
   getSaveURI() {
-    const save_state = {mode: this.state.mode};
-    const current = this.state[this.state.mode];
-    for (const key of App.saved_props[this.state.mode]) save_state[key] = current[key];
-    return encodeURIComponent(JSON.stringify(save_state, (_key, value) => {
-      if (value instanceof Hexagon.Map) return {
-        dataType: 'Hexagon.Map',
+    let save_state = {mode: this.state.mode};
+    let current = this.state[this.state.mode];
+    App.saved_props[this.state.mode].forEach(key => save_state[key] = current[key]);
+    return encodeURIComponent(JSON.stringify({version: VERSION, ...save_state},
+      (_key, value) => {
+      if (value instanceof Tile) return {
+        dataType: 'Hexagon_Tile',
         data: [...value]
       };
-      if (value instanceof Hexagon.Set) return {
-        dataType: 'Hexagon.Set',
+      if (value instanceof PointMap) return {
+        dataType: 'Hexagon_PointMap',
+        data: [...value]
+      }
+      if (value instanceof PointSet) return {
+        dataType: 'Hexagon_PointSet',
         data: [...value]
       }
       return value;
@@ -394,10 +360,22 @@ class App extends React.Component {
     let result;
     try {
       result = JSON.parse(file_text, (_key, value) => {
-        if (value?.dataType === 'Hexagon.Map') return new Hexagon.Map(value.data);
-        if (value?.dataType === 'Hexagon.Set') return new Hexagon.Set(value.data);
+        if (value?.dataType === 'Hexagon_Tile') return new Tile(value.data.map(([key, value]) =>
+          [new Tile.Point(...key), value]));
+        if (value?.dataType === 'Hexagon_PointMap') return new PointMap(value.data.map(([key, value]) =>
+        [new Tile.Point(...key), value]));
+        if (value?.dataType === 'Hexagon_PointSet') return new PointSet(value.data.map(value =>
+        new Tile.Point(...value)));
         return value;
       });
+      if (!result.version) {
+        result.mode = 'hex-freestyle';
+        result.tiledata = new PointMap(Object.entries(result.hexcolors).map(([key, color]) =>
+          [new PointMap.Point(...key.split(',').map(Number)), {color: color}]
+        ));
+        delete result.hexcolors;
+      }
+      delete result.version;
     } catch (e) {
       return 'invalid';
     }
@@ -419,36 +397,36 @@ class App extends React.Component {
   }
 
   tessellate() {
-    const current = this.state[this.state.mode];
-    const tiledata = current.tiledata;
-    const explored = new Hexagon.Set([[0,0]]);
-    const path = [];
-    const explore = translate => {
-      explored.add(translate);
-      const tile = Hexagon.translate(tiledata, translate);
-      if (!Hexagon.tilesAdjacent(tiledata, tile)) return;
-      if (!Hexagon.hasOverlap(tiledata, tile)) path.push([translate, tile]);
-      for (let i = 0; i < 4; ++i) {
-        const new_translate = Hexagon.step(translate, i);
-        if (!explored.has(new_translate)) explore(new_translate);
-      }
+    let current = this.state[this.state.mode];
+    let tiledata = current.tiledata;
+    let explored = new PointSet([new Tile.Point(0,0)]);
+    let path = [];
+    const explore = translation => {
+      if (explored.has(translation)) return;
+      explored.add(translation);
+      let tile = tiledata.translate(translation, true);
+      if (!tiledata.adjacentTo(tile)) return;
+      if (!tiledata.overlaps(tile))
+        path.push([translation, tiledata.translate(translation)]);
+      for (let i = 0; i < 4; ++i) explore(translation.step(i));
     }
-    explore([1,0]);
-    const tessellations = [];
-    const exclude1 = new Hexagon.Set();
-    const exclude2 = new Hexagon.Set();
+    explore(new Tile.Point(1,0));
+    let tessellations = [];
+    let exclude1 = new PointSet();
+    let exclude2 = new PointSet();
     while (path.length) {
-      let [translate1, tile1] = path.shift();
-      if (exclude1.has(translate1)) continue;
+      let [translation1, tile1] = path.shift();
+      if (exclude1.has(translation1)) continue;
       exclude2.clear();
-      path.forEach(([translate2,tile2]) => {
-        if (exclude2.has(translate2)) return;
-        if (Hexagon.tilesAdjacent(tile1, tile2) && !Hexagon.hasOverlap(tile1, tile2)) {
-          const merged = Hexagon.merge(tiledata, tile1, tile2, Hexagon.translate(tile1, translate2));
-          if (!Hexagon.hasHoles(merged)) {
-            tessellations.push([translate1, translate2]);
-            exclude1.add(translate2);
-            exclude2.add(Hexagon.subtract(translate1, translate2));
+      path.forEach(([translation2, tile2]) => {
+        if (exclude2.has(translation2)) return;
+        if (tile1.adjacentTo(tile2) && !tile1.overlaps(tile2)) {
+          let merged = new Tile(tiledata).merge(tile1).merge(tile2)
+            .merge(tile1.translate(translation2));
+          if (!merged.holes().length) {
+            tessellations.push([translation1, translation2]);
+            exclude1.add(translation2);
+            exclude2.add(translation1.subtract(translation2));
           }
         }
       });

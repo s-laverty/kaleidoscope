@@ -1,6 +1,6 @@
 import React from 'react';
 import './Hexagon.scss';
-import { multiply, transpose, add, subtract, smaller, larger, min, max,
+import { multiply, transpose, add, subtract, min, max,
   deepEqual, lup, ceil, lusolve, floor, flatten } from 'mathjs';
 import CustomMap from './utils/CustomMap';
 import CustomSet from './utils/CustomSet';
@@ -43,15 +43,15 @@ export class Point extends Array {
     [1,0], [0,1], [-1,1], [-1,0], [0,-1], [1,-1]
   ].map(Object.freeze));
   static equal(p1, p2) { return deepEqual(p1, p2); }
-  constructor(point) {
-    super(...point);
+  constructor(...coords) {
+    super(...coords);
     this.key = super.toString();
     Object.freeze(this);
   }
   toString() { return this.key; }
   equals(other) { return Point.equal(this, other); }
-  add(other) { return new Point(add(this, other)); }
-  subtract(other) { return new Point(subtract(this, other)); }
+  add(other) { return new Point(...add(this, other)); }
+  subtract(other) { return new Point(...subtract(this, other)); }
   step(i) { return this.add(Point.steps[i]); }
   forEachAdjacent(callback) {
     for (let i = 0; i < 6; ++i) callback(this.step(i), i);
@@ -70,7 +70,7 @@ export class Point extends Array {
 
 export const PointMap = (() => {
   const hashFn = point => point.key;
-  return class extends CustomMap {
+  return class PointMap extends CustomMap {
     static Point = Point;
     constructor(entries) {
       super(entries, hashFn);
@@ -80,7 +80,7 @@ export const PointMap = (() => {
 
 export const PointSet = (() => {
   const hashFn = point => point.key;
-  return class extends CustomSet {
+  return class PointSet extends CustomSet {
     static Point = Point;
     constructor(entries) {
       super(entries, hashFn);
@@ -106,14 +106,13 @@ export const Tile = (() => {
         this.points = new PointSet(start.points);
         this.borders = new Set();
         this.borders_by_point = new PointMap();
-        for (let border of start.borders) {
-          let is_perimeter = border === start.perimeter;
-          border = new PointMap(border);
-          if (is_perimeter) this.perimeter = border;
-          this.borders.add(border);
-          for (let point of border.keys())
-            this.borders_by_point.set(point, border);
-        }
+        start.borders.forEach(border => {
+          let new_border = new PointMap(border);
+          this.borders.add(new_border);
+          if (start.perimeter === border) this.perimeter = new_border;
+          new_border.forEach((_node, point) =>
+            this.borders_by_point.set(point, new_border));
+        });
       } else {
         this.points = new PointSet([start]);
         this.perimeter = new PointMap();
@@ -141,7 +140,7 @@ export const Tile = (() => {
           border.set(adj_point, Component.borderNode(adj_point, edges | (1<<(i+3)%6)));
         }
       } else this.borders.delete(border);
-      for (let start_point of node.next.slice(1)) this.splitBorder(border, start_point);
+      node.next.slice(1).forEach(start_point => this.splitBorder(border, start_point));
       this.points.add(point);
       return this;
     }
@@ -190,6 +189,25 @@ export const Tile = (() => {
     }
     has(point) { return this.points.has(point); }
     [Symbol.iterator]() { return this.points[Symbol.iterator](); }
+    forEach(...args) { return this.points.forEach(...args); }
+    translate(translation) {
+      let new_component = Object.create(Component.prototype);
+      new_component.points = new PointSet();
+      this.points.forEach(point => new_component.points.add(point.add(translation)));
+      new_component.borders = new Set();
+      new_component.borders_by_point = new PointMap();
+      this.borders.forEach(border => {
+        let new_border = new PointMap();
+        new_component.borders.add(new_border);
+        if (this.perimeter === border) new_component.perimeter = new_border;
+        border.forEach((node, point) => {
+          point = point.add(translation);
+          new_border.set(point, Component.borderNode(point, node.edges));
+          new_component.borders_by_point.set(point, new_border);
+        });
+      });
+      return new_component;
+    }
     splitBorder(src, start_point) {
       let dest = new PointMap();
       this.borders.add(dest);
@@ -209,12 +227,12 @@ export const Tile = (() => {
       return dest;
     }
     mergeBorder(src, dest) {
-      for (let [point, node] of src) {
+      src.forEach((node, point) => {
         let old_edges = dest.get(point)?.edges;
         if (old_edges) node = Component.borderNode(point, old_edges | node.edges);
         dest.set(point, node);
         this.borders_by_point.set(point, dest);
-      }
+      });
     }
     split(border, start_point) {
       let dest = Object.create(Component.prototype);
@@ -243,7 +261,7 @@ export const Tile = (() => {
       }
       explore(start_point);
       let concavity = 0;
-      for (let [point, edges] of new_border) {
+      new_border.forEach((edges, point) => {
         let old_edges = border.get(point).edges & ~edges;
         if (!old_edges) {
           border.delete(point);
@@ -253,7 +271,7 @@ export const Tile = (() => {
         concavity += node.concavity;
         new_border.set(point, node);
         dest.borders_by_point.set(point, new_border);
-      }
+      });
       if (concavity > 0) {
         dest.perimeter = this.perimeter;
         this.perimeter = border;
@@ -284,8 +302,8 @@ export const Tile = (() => {
           split_next = false;
         }
       }
-      for (let point of src) this.points.add(point);
-      for (let border of src.borders) {
+      src.forEach(point => this.points.add(point));
+      src.borders.forEach(border => {
         if (border !== src_border) {
           let is_perimeter = border === src.perimeter;
           border = new PointMap(border);
@@ -294,8 +312,8 @@ export const Tile = (() => {
           for (let point of border.keys())
             this.borders_by_point.set(point, border);
         }
-      }
-      for (let start_point of to_split) this.splitBorder(merged_border, start_point);
+      });
+      to_split.forEach(start_point => this.splitBorder(merged_border, start_point));
     }
   }
   const edges = Symbol('edges'),
@@ -303,7 +321,7 @@ export const Tile = (() => {
     components = Symbol('components'),
     components_by_point = Symbol('components_by_point'),
     trace_border = Symbol('trace-border');
-  return class extends PointMap {
+  return class Tile extends PointMap {
     constructor(entries) {
       if (entries instanceof Tile) {
         super(entries);
@@ -311,19 +329,18 @@ export const Tile = (() => {
         this[adjacent] = new PointMap(entries[adjacent]);
         this[components] = new Set();
         this[components_by_point] = new PointMap();
-        for (let component of entries[components]) {
+        entries[components].forEach(component => {
           component = new Component(component);
           this[components].add(component);
-          for (let point of component)
-            this[components_by_point].set(point, component);
-        }
+          component.forEach(point => this[components_by_point].set(point, component));
+        });
       } else {
         super();
         this[edges] = new PointMap();
         this[adjacent] = new PointMap();
         this[components] = new Set();
         this[components_by_point] = new PointMap();
-        if (entries) for (let [point, data] of entries) this.set(point, data);
+        if (entries) for (let entry of entries) this.set(...entry);
       }
     }
     clear() {
@@ -352,11 +369,11 @@ export const Tile = (() => {
         this[components_by_point].delete(point);
         if (new_edges) {
           this[adjacent].set(point, new_edges);
-          for (let new_component of component.delete(point)) {
+          component.delete(point).forEach(new_component => {
             this[components].add(new_component);
-            for (let point of new_component)
-              this[components_by_point].set(point, new_component);
-          }
+            new_component.forEach(point =>
+              this[components_by_point].set(point, new_component));
+          });
         } else this[components].delete(component);
         return true;
       } else return false;
@@ -396,13 +413,18 @@ export const Tile = (() => {
       }
       super.set(point, data);
     }
-    [trace_border](start_point, start_edge) {
-      let border = [];
+    [trace_border](border) {
+      let [start_point, start_node] = border.entries().next().value;
+      let start_edge = 0;
+      while (!((1<<start_edge) & start_node.edges)) ++start_edge;
+      start_point = start_point.step(start_edge);
+      start_edge = (start_edge+3)%6;
+      let trace = [];
       let point = start_point,
         current_edges = this[edges].get(start_point),
         i = start_edge;
       do {
-        border.push([point, i]);
+        trace.push([point, i]);
         i = (i+1)%6;
         if (!(current_edges & (1<<i))) {
           point = point.step(i);
@@ -410,7 +432,59 @@ export const Tile = (() => {
           i = (i+4)%6;
         }
       } while (!point.equals(start_point) || i !== start_edge);
-      return border;
+      return trace;
+    }
+    overlaps(other) {
+      for (let point of this.keys()) {
+        if (other.has(point)) return true;
+      }
+      return false;
+    }
+    adjacentTo(other) {
+      for (let point of this[adjacent].keys()) {
+        if (other.has(point)) return true;
+      }
+      return false;
+    }
+    translate(translation, shallow=false) {
+      if (shallow) {
+        let new_tile = new PointSet();
+        for (let point of this.keys()) new_tile.add(point.add(translation));
+        return new_tile;
+      }
+      let new_tile = new Tile();
+      this.forEach((value, point) => super.set.call(new_tile, point.add(translation), value));
+      this[edges].forEach((value, point) => new_tile[edges].set(point.add(translation), value));
+      this[adjacent].forEach((value, point) =>
+        new_tile[adjacent].set(point.add(translation), value));
+      this[components].forEach(component => {
+        component = component.translate(translation);
+        new_tile[components].add(component);
+        component.forEach(point => new_tile[components_by_point].set(point, component));
+      })
+      return new_tile;
+    }
+    getComponent(start) {
+      let component = this[components_by_point].get(start);
+      if (!component) throw new Error('Improper usage: tile must contain starting point');
+      let new_tile = new Tile();
+      let new_component = new Component(component);
+      new_tile[components].add(new_component);
+      new_component.forEach(point => {
+        super.set.call(new_tile, point, this.get(point));
+        new_tile[components_by_point].set(point, new_component);
+        let current_edges = this[edges].get(point);
+        if (current_edges) new_tile[edges].set(point, current_edges);
+      });
+      new_component.borders.forEach(border => border.forEach((node, point) =>
+        new_tile[adjacent].set(point, node.edges)));
+      return new_tile;
+    }
+    merge(other) {
+      if (this.overlaps(other))
+        throw new Error('Improper usage: merged tile cannot overlap this one');
+      other.forEach((value, point) => this.set(point, value));
+      return this;
     }
     edges() {
       return this[edges].keys();
@@ -424,113 +498,23 @@ export const Tile = (() => {
     perimeter() {
       if (!this.isConnected())
         throw new Error('Improper usage: perimeter() must operate on a connected tile');
-      let component = this[components].values().next().value;
-      let [adj_point, {edges: adj_edges}] = component.perimeter.entries().next().value;
-      let start_point, start_edge;
-      for (let i = 0; i < 6; ++i) {
-        if (adj_edges & (1<<i)) {
-          start_point = adj_point.step(i);
-          start_edge = (i+3)%6;
-          break;
-        }
-      }
-      return this[trace_border](start_point, start_edge);
+      return this[trace_border](this[components].values().next().value.perimeter);
     }
     holes() {
       if (!this.isConnected()) {
-        for (let component of this[components]) {
-
-        }
+        throw new Error('Improper usage: holes() must operate on a connected tile');
       }
+      let holes = [];
+      let component = this[components].values().next().value;
+      component.borders.forEach(border => {
+        if (component.perimeter !== border) holes.push(this[trace_border](border));
+      });
+      return holes;
     }
   };
 })();
 
 class Hexagon extends React.PureComponent {
-  static translate(tile, translate) {
-    const translated = new this.Tile();
-    for (const [point, data] of tile)
-      translated.set(this.add(point, translate), data);
-    return translated;
-  }
-
-  static getBounds(tile) {
-    let min_dims = [-Infinity, -Infinity];
-    let max_dims = [Infinity, Infinity];
-    for (const point of tile.keys()) {
-      min_dims = min([point, min_dims], 0);
-      max_dims = max([point, max_dims], 0);
-    }
-    return [min_dims, max_dims];
-  }
-
-  static hasOverlap(tile1, tile2, translate=null) {
-    let [smaller, larger] = [tile1, tile2].sort(tile => tile.size);
-    if (translate) {
-      if (smaller === tile1) translate = multiply(translate, -1);
-      smaller = this.translate(smaller, translate);
-    }
-    for (const point of smaller.keys())
-      if (larger.has(point)) return true;
-    return false;
-  }
-
-  static tilesAdjacent(tile1, tile2, translate=null) {
-    let [smaller, larger] = [tile1, tile2].sort(tile => tile.size);
-    if (translate) {
-      if (smaller === tile1) translate = multiply(translate, -1);
-      smaller = this.translate(smaller, translate);
-    }
-    for (const point of smaller.keys())
-      if (this.someAdjacent(point, adj_point => larger.has(adj_point))) return true;
-    return false;
-  }
-
-  static merge(...tiles) {
-    const merged = new this.Tile();
-    for (const tile of tiles) {
-      for (let [point, data] of tile) {
-        if (merged.has(point))
-          throw new Error(`Improper Usage: Overlap between hexes at ${point}`);
-        merged.set(point, data);
-      }
-    }
-    return merged;
-  }
-
-  static getPerimeter(tile) {
-    if (!tile.isConnected()) throw new Error('Improper Usage: Tile is not connected');
-    const borders = tile.borders();
-    if (borders.length === 1) return borders[0];
-    let min_point = [Infinity,Infinity];
-    let max_point = [-Infinity,-Infinity];
-    let perimeter;
-    for (const border of borders) {
-      for (const [point, edge] of border) {
-        const edge_point = this.step(point, edge);
-        if (smaller(edge_point, min_point).includes(true)) {
-          min_point = min([edge_point, min_point], 0);
-          perimeter = border;
-        }
-        if (larger(edge_point, max_point).includes(true)) {
-          max_point = max([edge_point, max_point], 0);
-          perimeter = border;
-        }
-      }
-    }
-    return perimeter;
-  }
-
-  static getHoles(tile) {
-    const borders = tile.borders();
-    const perimeter = this.getPerimeter(tile);
-    return borders.filter(border => border !== perimeter);
-  }
-
-  static hasHoles(tile) {
-    return tile.isConnected() && tile.borders().length > 1;
-  }
-
   static visibleInBox(t,r,b,l) {
     const x_spacing = hexconst.spacing[0][0];
     const y_spacing = hexconst.spacing[1][1];
@@ -563,13 +547,13 @@ class Hexagon extends React.PureComponent {
     });
     for (let i = min_point[0]; i <= max_point[0]; ++i)
       for (let j = min_point[1]; j <= max_point[1]; ++j)
-        yield multiply(tessellation, [i,j]);
+        yield new Point(...multiply(tessellation, [i,j]));
   }
 
   static Outline = React.memo(props => {
     const {tile} = props;
     const points = [];
-    const perimeter = this.getPerimeter(tile);
+    const perimeter = tile.perimeter();
     perimeter.reduce((prev_point, [point, i]) => {
       const center = multiply(hexconst.spacing, point);
       if (!deepEqual(point, prev_point))
@@ -626,7 +610,7 @@ class Hexagon extends React.PureComponent {
       draggable=false,
       ...other
     } = this.props;
-    const point = new Point([x,y]);
+    const point = new Point(x,y);
     for (const [key, val] of Object.entries(other)) {
       if (key.startsWith('on') && typeof val === 'function')
         other[key] = e => val(e, point);
