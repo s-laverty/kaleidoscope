@@ -1,14 +1,14 @@
 import React from 'react';
 import './DisplayArea.scss';
-import Hexagon from '../Hexagon.js';
+import Hexagon, { PointMap, PointSet } from '../Hexagon.js';
 
 class DisplayArea extends React.Component {
 
   constructor(props) {
     super(props);
     this.container = React.createRef();
-    this.hex_actions = new Hexagon.Map();
-    this.hex_tile_colors = new Hexagon.Map();
+    this.hex_actions = new PointMap();
+    this.hex_tile_colors = new PointMap();
     this.state = {
       dragFrom: null,
       shiftKey: false,
@@ -68,7 +68,7 @@ class DisplayArea extends React.Component {
 
   handleHexEvent(e, point) {
     switch (e.type) {
-      case 'click': 
+      case 'click':
         this.props.handleDisplay('hex-click', point, this.hex_actions.get(point));
         break;
       case 'mouseenter':
@@ -115,7 +115,7 @@ class DisplayArea extends React.Component {
           let {l,r} = hexgrid;
           for (let y = t, i = 0; y <= b; ++y,++i) {
             for (let x = l; x <= r; ++x) {
-              const point = [x,y];
+              const point = new PointMap.Point(x,y);
               let color = current.tiledata.get(point)?.color ?? 'lightgray';
               hexes.push(<Hexagon key={point} color={color} x={x} y={y}
                 onClick = {this.handleHexEvent} onMouseDown={this.handleHexEvent}
@@ -129,21 +129,22 @@ class DisplayArea extends React.Component {
         else if (this.props.mode === 'hex-tessellate') {
           if (current.active_tool === 'reset-tile-colors') this.hex_tile_colors.clear();
           if (current.active_tessellation_index !== null) {
-            for (let coords of Hexagon.getTilesInWindow([[l_px,t_px],[r_px,b_px]],
+            for (let point of Hexagon.getTilesInWindow([[l_px,t_px],[r_px,b_px]],
             current.tessellations[current.active_tessellation_index])) {
-              const [x,y] = coords;
-              let color = this.hex_tile_colors.get(coords);
+              const [x,y] = point;
+              let color = this.hex_tile_colors.get(point);
               if (!color) {
                 color = `#${Math.floor(Math.random()*(1<<(8*3))).toString(16).padStart(6,'0')}`;
-                this.hex_tile_colors.set(coords, color);
+                this.hex_tile_colors.set(point, color);
               }
-              tiles.push(<Hexagon.Tile key={coords} x={x} y={y} outline={true}
+              tiles.push(<Hexagon.TileRender key={point} x={x} y={y} outline={true}
                 tile={current.tiledata} color_override={color}/>
               );
             }
           } else {
-            for (let [coords, data] of current.tiledata) {
-              const [x,y] = coords;
+            const edges = new PointSet(current.tiledata.edges());
+            for (let [point, data] of current.tiledata) {
+              const [x,y] = point;
               let color;
               let action;
               let className;
@@ -151,21 +152,21 @@ class DisplayArea extends React.Component {
                 if (!x && !y) {
                   className = 'confirm';
                   action='tile-confirm';
-                } else if (data.edges) {
+                } else if (edges.has(point)) {
                   className = 'remove';
                   action='tile-remove';
                 } else color = 'blue';
               } else color = data.color ?? 'lightgray';
-              this.hex_actions.set(coords, action);
-              hexes.push(<Hexagon key={coords} color={color} x={x} y={y}
+              this.hex_actions.set(point, action);
+              hexes.push(<Hexagon key={point} color={color} x={x} y={y}
                 className={className} onClick={this.handleHexEvent}/>
               );
             }
             if (current.active_tool === 'tile-shape') {
-              for (let coords of current.adjacent) {
-                const [x,y] = coords;
-                this.hex_actions.set(coords, 'tile-add');
-                hexes.push(<Hexagon key={coords} x={x} y={y}
+              for (let point of current.tiledata.adjacent()) {
+                const [x,y] = point;
+                this.hex_actions.set(point, 'tile-add');
+                hexes.push(<Hexagon key={point} x={x} y={y}
                   className={'add'} onClick={this.handleHexEvent}/>
                 );
               }

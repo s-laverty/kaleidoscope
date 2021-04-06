@@ -10,14 +10,14 @@ const ModeDropdown = props => (
     handleToggle={() => props.handleToolbar('set-dropdown', 'mode')}
   >
     <ToolbarButton
-      text='Hexagon Freestyle'
-      selected={props.mode === 'hex-freestyle'}
-      onClick={() => props.handleToolbar('set-mode', 'hex-freestyle')}
-    />
-    <ToolbarButton key={'save'}
       text='Hexagon Tessellation'
       selected={props.mode === 'hex-tessellate'}
       onClick={() => props.handleToolbar('set-mode', 'hex-tessellate')}
+    />
+    <ToolbarButton
+      text='Hexagon Freestyle'
+      selected={props.mode === 'hex-freestyle'}
+      onClick={() => props.handleToolbar('set-mode', 'hex-freestyle')}
     />
   </ToolbarDropdown>
 );

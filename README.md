@@ -2,6 +2,8 @@
 
 This single-page application allows users to design customized patterns on a hexagonal grid. Users can create patterns that tessellate or entirely freeform designs. This project is implemented using [ReactJS](https://reactjs.org/) and bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
+Latest build hosted at: [https://hexplanet.com/kaleidoscope](https://hexplanet.com/kaleidoscope)
+
 ## Features
 
 This application has multiple modes of operation. In all modes, scrolling the page will allow the user to zoom in or out.
