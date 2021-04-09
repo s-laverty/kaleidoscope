@@ -180,7 +180,7 @@ class App extends React.Component {
     };
     this._display_handlers = {
       'hex-click': (point, action) => {
-        let log_change = false;
+        let callback;
         this.setState(state => {
           const current = state[state.mode];
           let tiledata;
@@ -199,7 +199,7 @@ class App extends React.Component {
               } else {
                 let tile = current.tiledata.get(point);
                 if (tile?.color !== current.colors[current.active_color_index]) {
-                  log_change = true;
+                  callback = this.saveState;
                   tiledata = new current.tiledata.constructor(current.tiledata);
                   tiledata.set(point, {...tile,
                     color: current.colors[current.active_color_index]
@@ -213,7 +213,7 @@ class App extends React.Component {
               }
               break;
             case 'erase':
-              log_change = true;
+              callback = this.saveState;
               tiledata = new current.tiledata.constructor(current.tiledata);
               tiledata.delete(point);
               return {
@@ -241,12 +241,15 @@ class App extends React.Component {
                   if (!tiledata.isConnected())
                     tiledata = tiledata.getComponent(new Tile.Point(0,0));
                   break;
+                case 'tile-confirm':
+                  callback = () => this.handleToolbar('tile-shape');
+                  break;
                 default: console.warn(`Unrecognized tile-shape action: ${action}`);
               }
               return {[state.mode]: {...current, tiledata: tiledata}};
             default: break;
           }
-        }, () => log_change && this.saveState());
+        }, () => callback && callback());
       },
       'pan': (dx,dy) => this.setState(state => {
         const current = state[state.mode];
