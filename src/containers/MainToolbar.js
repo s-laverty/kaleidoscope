@@ -22,7 +22,7 @@ const MainToolbar = props => {
     }
   }
   const colors = [];
-  if (mode === 'hex-freestyle') {
+  if (['hex-tessellate','hex-freestyle'].includes(mode)) {
     for (let i = 0; i < current.colors.length; ++i) {
       const checkDrop = e => {
         if (e.dataTransfer.types.includes('application/x-kaleidoscope-color')
@@ -77,14 +77,33 @@ const MainToolbar = props => {
           collapsed={props.active_dropdown !== 'tessellate'}
           handleToggle={() => handleToolbar('set-dropdown', 'tessellate')}
         >{tessellation_options}</ToolbarDropdown>}
-        {mode === 'hex-freestyle' && <OptionsDropdown
+        {['hex-tessellate', 'hex-freestyle'].includes(mode) && <OptionsDropdown
           mode={mode}
           current={current}
           collapsed={props.active_dropdown !== 'options'}
           handleToolbar={handleToolbar}
         />}
         <div className='tools-wrapper'>
-          {mode === 'hex-freestyle' && <>
+          {mode === 'hex-tessellate' && <>
+            <ToolbarButton
+              text='Tile Shape'
+              selected={current.active_tool === 'tile-shape'}
+              onClick={() => handleToolbar('tile-shape')}
+            />
+            <ToolbarButton
+              text='Tile Swap'
+              selected={current.active_tool === 'tile-swap'}
+              disabled={current.active_tessellation_index === null}
+              onClick={() => handleToolbar('tile-swap')}
+            />
+            <ToolbarButton
+              text='Show Outline'
+              selected={current.show_outline === true}
+              disabled={current.active_tool === 'tile-shape'}
+              onClick={() => handleToolbar('toggle-outline')}
+            />
+          </>}
+          {['hex-tessellate', 'hex-freestyle'].includes(mode) && <>
             {colors}
             <ToolbarButton
               text='Add Color'
@@ -113,6 +132,8 @@ const MainToolbar = props => {
                   Number(e.dataTransfer.getData('application/x-kaleidoscope-color')));
               }}
             />
+          </>}
+          {mode === 'hex-freestyle' && <>
             <ToolbarButton
               text='Undo'
               disabled={current.history_index === 0}
@@ -124,18 +145,6 @@ const MainToolbar = props => {
               disabled={current.history_index === current.history.length - 1}
               onClick={() => handleToolbar('redo')}
               title='Ctrl+y'
-            />
-          </>}
-          {mode === 'hex-tessellate' && <>
-            <ToolbarButton
-              text='Tile Shape'
-              selected={current.active_tool === 'tile-shape'}
-              onClick={() => handleToolbar('tile-shape')}
-            />
-            <ToolbarButton
-              text='Reset Colors'
-              disabled={current.active_tessellation_index === null}
-              onClick={() => handleToolbar('set-tool', 'reset-tile-colors')}
             />
           </>}
         </div>

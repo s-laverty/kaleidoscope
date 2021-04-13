@@ -8,15 +8,17 @@ const VERSION = '0.1.0';
 
 class App extends React.Component {
   static saved_props = {
-    'hex-freestyle': ['tiledata','colors','pan','zoom'],
-    'hex-tessellate': []
+    'hex-tessellate': ['tiledata','colors','tessellations','show_outlne','zoom'],
+    'hex-freestyle': ['tiledata','colors','pan','zoom']
   }
   static default_props = {
     'hex-tessellate': {
       tiledata: new Tile([[new Tile.Point(0,0), {}]]),
+      colors: ['#ff0000','#00ff00','#0000ff'],
       tessellations: [],
       active_tessellation_index: null,
       active_tool: 'tile-shape',
+      show_outline: true,
       zoom: 1.0
     },
     'hex-freestyle': {
@@ -176,7 +178,15 @@ class App extends React.Component {
         [state.mode]: {...state[state.mode],
           active_tessellation_index: i,
         }
-      }))
+      })),
+      'toggle-outline': () => this.setState(state => {
+        const current = state[state.mode];
+        return {
+          [state.mode]: {...current,
+            show_outline: !current.show_outline
+          }
+        };
+      })
     };
     this._display_handlers = {
       'hex-click': (point, action) => {
@@ -272,6 +282,7 @@ class App extends React.Component {
         };
       })
     };
+    this.saveState = this.saveState.bind(this);
     this.handleClick = this.handleClick.bind(this);
     this.handleKeyDown = this.handleKeyDown.bind(this);
     this.handleDisplay = this.handleDisplay.bind(this);
@@ -467,14 +478,6 @@ class App extends React.Component {
           return {
             'hex-freestyle': {...current,
               active_option: 'change-color'
-            }
-          };
-        }
-      } else if (state.mode === 'hex-tessellate') {
-        if (current.active_tool === 'reset-tile-colors') {
-          return {
-            'hex-tessellate': {...current,
-              active_tool: null
             }
           };
         }
