@@ -1,0 +1,20 @@
+.HexTessellateDisplay {
+  .Hexagon {
+    &.add, &.remove, &.confirm {
+      background-position: center;
+      background-repeat: no-repeat;
+    }
+    &.confirm {
+      background-image: url('../assets/white-check.svg');
+      background-size: 45%;
+    }
+    &.add {
+      background-image: url('../assets/white-plus.svg');
+      background-size: 35%;
+    }
+    &.remove {
+      background-image: url('../assets/white-minus.svg');
+      background-size: 35%;
+    }
+  }
+}

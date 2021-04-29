@@ -1,0 +1,17 @@
+.Slider {
+  width: 1.5em;
+  .scroll-jump {
+    padding: 0.125em 0;
+  }
+  .dial-wrapper {
+    width: 0;
+    height: calc(100% - 1.5em);
+    top: 0.75em;
+    left: 0.75em;
+  }
+  .dial {
+    width: 2em;
+    height: 2em;
+    transform: translate(-50%, -50%);
+  }
+}
