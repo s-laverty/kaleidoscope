@@ -53,6 +53,7 @@ const reducer = (state, {type, ...action}) => {
       result = {[mode]: {...current, tool}};
     } break;
     case 'load-tessellations': {
+      if (current.tessellation_signature === current.tile_shape_signature) break;
       let {tessellations, signature} = action;
       if (signature === current.tile_shape_signature)
         result = {[mode]: {...current, tessellations, tessellation_signature: signature}};
