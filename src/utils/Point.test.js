@@ -1,4 +1,4 @@
-import { Point, Tile } from "./Hexagon";
+import Point from "./Point";
 
 describe('Point tests', () => {
   let p1, p2;
