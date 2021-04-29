@@ -1,0 +1,102 @@
+.Kaleidoscope {
+  --white-transparent: rgba(255,255,255,.75);
+
+  .top-left {
+    top: 0;
+    left: 0;
+  }
+
+  .top-right {
+    top: 0;
+    right: 0;
+  }
+
+  .bottom-left {
+    bottom: 0;
+    left: 0;
+  }
+
+  .bottom-right {
+    bottom: 0;
+    right: 0;
+  }
+
+  .right-middle {
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+  }
+
+  .overflow-visible {
+    overflow: visible;
+  }
+
+  .w-0 {
+    width: 0;
+  }
+
+  .h-0 {
+    height: 0;
+  }
+
+  .bg-white-transparent {
+    &:not(.btn), &.btn:disabled, &.btn.disabled,
+    &.btn:not(:disabled):not(.disabled):not(:hover):not(:active) {
+      background-color: var(--white-transparent);
+    }
+  }
+
+  .bg-missing {
+    background-image: url('../assets/checkerboard.svg');
+    background-size: 20px;
+  }
+
+  .drop-shadow {
+    filter: drop-shadow(0 0 1px gray);
+  }
+
+  .cursor-default {
+    &, &.btn {
+      cursor: default;
+    }
+    * {
+      cursor: unset !important;
+    }
+  }
+
+  .cursor-pointer {
+    &, &.btn {
+      cursor: pointer;
+    }
+    * {
+      cursor: unset !important;
+    }
+  }
+
+  .cursor-move {
+    &, &.btn {
+      cursor: move;
+    }
+    * {
+      cursor: unset !important;
+    }
+  }
+
+  .cursor-grab {
+    &, &.btn {
+      cursor: grab;
+    }
+    * {
+      cursor: unset !important;
+    }
+  }
+
+  .cursor-grabbing {
+    &, &.btn {
+      cursor: grabbing;
+    }
+    * {
+      cursor: unset !important;
+    }
+  }
+}
