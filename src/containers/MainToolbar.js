@@ -16,7 +16,7 @@ const MainToolbar = props => {
     for (let i = 0; i < current.tessellations.length; ++i) {
       tessellation_options.push(<ToolbarButton key={i}
         onClick={() => handleToolbar('set-tessellation-index', i)}
-        selected={current.active_tessellation_index === i}
+        selected={current.tessellation_index === i}
         text={`Option #${i+1}`}
       />);
     }
@@ -32,7 +32,7 @@ const MainToolbar = props => {
         }
       }
       colors.push(<ToolbarButton key={i}
-        onClick={() => handleToolbar('set-tool', 'color', i)}
+        onClick={() => handleToolbar('select-tool', 'color', i)}
         onDragStart={e => {
           e.dataTransfer.effectAllowed = 'move';
           e.dataTransfer.setData('application/x-kaleidoscope-color', i);
@@ -44,7 +44,7 @@ const MainToolbar = props => {
           handleToolbar('swap-colors', i,
             Number(e.dataTransfer.getData('application/x-kaleidoscope-color')));
         }}
-        selected={current.active_color_index === i}
+        selected={current.color_index === i}
         text={`Color #${i+1}`}
         icon={{
           border: true,
@@ -72,7 +72,7 @@ const MainToolbar = props => {
         />
         {mode === 'hex-tessellate' && <ToolbarDropdown
           title='Tessellate'
-          disabled={current.active_tool === 'tile-shape' ||
+          disabled={current.tool === 'tile-shape' ||
             !current.tessellations.length}
           collapsed={props.active_dropdown !== 'tessellate'}
           handleToggle={() => handleToolbar('set-dropdown', 'tessellate')}
@@ -87,20 +87,20 @@ const MainToolbar = props => {
           {mode === 'hex-tessellate' && <>
             <ToolbarButton
               text='Tile Shape'
-              selected={current.active_tool === 'tile-shape'}
+              selected={current.tool === 'tile-shape'}
               onClick={() => handleToolbar('tile-shape')}
             />
             <ToolbarButton
               text='Tile Swap'
-              selected={current.active_tool === 'tile-swap'}
-              disabled={current.active_tessellation_index === null}
+              selected={current.tool === 'tile-swap'}
+              disabled={current.tessellation_index === null}
               onClick={() => handleToolbar('tile-swap')}
             />
             <ToolbarButton
               text='Show Outline'
               selected={current.show_outline === true}
-              disabled={current.active_tool === 'tile-shape'}
-              onClick={() => handleToolbar('toggle-outline')}
+              disabled={current.tool === 'tile-shape'}
+              onClick={() => handleToolbar('set-outline')}
             />
           </>}
           {['hex-tessellate', 'hex-freestyle'].includes(mode) && <>
@@ -116,8 +116,8 @@ const MainToolbar = props => {
                 src: RedX,
                 style: {backgroundColor: 'white'}
               }}
-              selected={current.active_tool === 'erase'}
-              onClick={() => handleToolbar('set-tool', 'erase')}
+              selected={current.tool === 'erase'}
+              onClick={() => handleToolbar('select-tool', 'erase')}
               onDragEnter={e => {
                 if (e.dataTransfer.types.includes('application/x-kaleidoscope-color'))
                   e.preventDefault();
