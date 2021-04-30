@@ -29,7 +29,7 @@ const HexTessellateDisplay = ({dims, zoom, tiledata, tile_shape_signature, tesse
         Confirm Shape
       </Tooltip>}
     >
-      <Hexagon key={origin} className='confirm btn-success shadow-none'
+      <Hexagon key={origin} className='confirm btn-success shadow-none cursor-pointer'
       x={0} y={0} onClick={onConfirm}/>
     </OverlayTrigger>);
     let edges = new PointSet(tiledata.edges());
@@ -37,15 +37,15 @@ const HexTessellateDisplay = ({dims, zoom, tiledata, tile_shape_signature, tesse
       if (point.equals(origin)) continue;
       let [x, y] = point;
       let props = edges.has(point) ? {
-        className: 'remove btn-primary shadow-none',
+        className: 'remove btn-primary shadow-none cursor-pointer',
         onClick: onRemove
-      } : {className: 'bg-primary cursor-default'};
+      } : {className: 'bg-primary'};
       children.push(<Hexagon key={point} x={x} y={y} {...props}/>);
     }
     for (let point of tiledata.adjacent()) {
       let [x, y] = point;
       children.push(<Hexagon key={point} x={x} y={y}
-        className='add btn-secondary shadow-none' onClick={onAdd}/>);
+        className='add btn-secondary shadow-none cursor-pointer' onClick={onAdd}/>);
     }
   } else {
     let outline = show_outline && <HexOutlineSVG points={outline_points}

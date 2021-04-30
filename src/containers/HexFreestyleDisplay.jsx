@@ -10,7 +10,7 @@ const Chunk = memo(({tiledata, x, y, ...other}) => {
   for (let i = 0; i < CHUNK_SIZE; ++i, ++x) {
     for (let j = 0; j < CHUNK_SIZE; ++j, ++y) {
       let point = new HexPoint(x, y);
-      hexes.push(<Hexagon key={point} x={x} y={y}
+      hexes.push(<Hexagon key={point} x={x} y={y} className='cursor-pointer'
         color={tiledata.get(point)}
         {...other}/>);
     }
