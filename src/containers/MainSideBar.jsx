@@ -300,6 +300,19 @@ const MainSideBar = ({mode, current, dispatch, postMessage}) => (<>
           <i className='bi-brush h5'/><br/>
           Fill Color
         </ToolButton>
+        <ToolButton disabled={current.color_index === null}
+        active={current.tool === 'flood-color'}
+        onClick={() => dispatch({type: 'select-tool', tool: 'flood-color'})}
+        tooltip={<Tooltip id={'fill-color-button-tooltip'}>
+          {current.color_index === null ? <>
+            You must first <i>choose a color</i> before you can use <b>Paint Bucket</b>.
+          </> : <>
+            Replace all connected hexes of a given color with the new color.
+          </>}
+        </Tooltip>}>
+          <i className='bi-paint-bucket h5'/><br/>
+          Paint Bucket
+        </ToolButton>
         <ToolButton variant='danger' active={current.tool === 'clear-color'}
         onClick={() => dispatch({type: 'select-tool', tool: 'clear-color'})}
         tooltip={<Tooltip id={'clear-color-button-tooltip'}>

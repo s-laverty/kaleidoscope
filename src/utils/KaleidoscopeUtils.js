@@ -40,6 +40,7 @@ export const TOOLS = {
   'tile-swap': 'Swap Hexes',
   'pan': 'Pan',
   'fill-color': 'Fill Color',
+  'flood-color': 'Paint Bucket',
   'clear-color': 'Clear Color',
   'eyedropper-color': 'Eyedropper',
 }
