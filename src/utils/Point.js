@@ -10,7 +10,7 @@ class Point extends Array {
     Object.freeze(this);
   }
   toString() { return this.key; }
-  equals(other) { return Point.equal(this, other); }
+  equals(other) { return other instanceof Point && Point.equal(this, other); }
   add(other) { return new this.constructor(...add(this, other)); }
   subtract(other) { return new this.constructor(...subtract(this, other)); }
   multiply(other) { return new this.constructor(...multiply(this, other)); }
