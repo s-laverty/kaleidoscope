@@ -199,7 +199,7 @@ const reducer = (state, {type, ...action}) => {
         case 'fill-color': {
           let {tiledata, chunk_signatures} = current;
           let color = current.colors[current.color_index];
-          if (tiledata.get(point) === color) break;
+          if (color === tiledata.get(point)) break;
           tiledata = tiledata.clone();
           tiledata.set(point, color);
           let next = {...current, tiledata};
@@ -208,6 +208,25 @@ const reducer = (state, {type, ...action}) => {
             chunk_signatures.set(point.divide(CHUNK_SIZE).floor(), Symbol());
             next.chunk_signatures = chunk_signatures;
           }
+          result = {[mode]: next};
+        } break;
+        case 'flood-color': {
+          let {tiledata, chunk_signatures} = current;
+          let color = current.colors[current.color_index];
+          let prev = tiledata.get(point);
+          if (!prev || color === prev) break;
+          tiledata = tiledata.clone();
+          chunk_signatures = chunk_signatures?.clone();
+          let explore = point => point.forEachAdjacent(adj_point => {
+            if (tiledata.get(adj_point) === prev) {
+              tiledata.set(adj_point, color);
+              chunk_signatures?.set(adj_point.divide(CHUNK_SIZE).floor(), Symbol());
+              explore(adj_point);
+            }
+          });
+          explore(point);
+          let next = {...current, tiledata};
+          if (chunk_signatures) next.chunk_signatures = chunk_signatures;
           result = {[mode]: next};
         } break;
         case 'clear-color': {
