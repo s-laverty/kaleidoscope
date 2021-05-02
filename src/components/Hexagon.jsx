@@ -129,8 +129,7 @@ export const HexTileSVG = memo(({hexes, className, ...other}) => {
   className = (className?.concat(' ') ?? '') + 'overflow-visible position-absolute';
   return (
     <svg {...other} className={className}>
-      {hexes.map(([points, {color, ...other}]) =>
-        <polygon points={points} fill={color} stroke='none' {...other}/>)}
+      {hexes.map(([points, color]) => <polygon points={points} fill={color} stroke='none'/>)}
     </svg>
   );
 });
