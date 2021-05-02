@@ -10,6 +10,7 @@ import { Col, Container, Row } from 'react-bootstrap';
 /* CreateReactApp limitation doesn't currently allow web workers */
 import Worker from 'worker-loader!../utils/worker'; // eslint-disable-line import/no-webpack-loader-syntax
 import Point from '../utils/Point';
+import { add, flatten, inv, multiply, subtract } from 'mathjs';
 
 const reducer = (state, {type, ...action}) => {
   let {mode} = state;
@@ -54,9 +55,21 @@ const reducer = (state, {type, ...action}) => {
     } break;
     case 'load-tessellations': {
       if (current.tessellation_signature === current.tile_shape_signature) break;
-      let {tessellations, signature} = action;
-      if (signature === current.tile_shape_signature)
-        result = {[mode]: {...current, tessellations, tessellation_signature: signature}};
+      let prev_tessellation = current.tessellations?.[current.tessellation_index];
+      let {tessellations, signature: tessellation_signature} = action;
+      if (tessellation_signature === current.tile_shape_signature) {
+        let tessellation_index = null;
+        // Check if the current tessellation exists in the new set
+        if (prev_tessellation) {
+          let prev_inv = inv(prev_tessellation);
+          tessellations.forEach((tessellation, i) => {
+            if (flatten(multiply(tessellation, prev_inv)).every(
+              x => Math.abs(x - Math.round(x)) < 1e-5
+            )) tessellation_index = i;
+          });
+        }
+        result = {[mode]: {...current, tessellations, tessellation_signature, tessellation_index}};
+      }
     } break;
     case 'select-color': {
       let {color_index} = action;
@@ -160,6 +173,28 @@ const reducer = (state, {type, ...action}) => {
               break;
             }
           }
+        } break;
+        case 'tile-swap': {
+          let {add: to_add, remove} = action;
+          let {tessellations, tessellation_index} = current;
+          let tessellation = tessellations[tessellation_index];
+          let tiledata = current.tiledata.clone();
+          tiledata.set(to_add, tiledata.get(remove));
+          tiledata.delete(remove);
+          // Modify principal translations if necessary (both should be adjacent to the tile)
+          for (let [i, translation] of tessellation.entries()) {
+            let translated = tiledata.translate(translation, true);
+            if (tiledata.adjacentTo(translated)) continue;
+            tessellations = tessellations.slice();
+            tessellation = tessellation.slice();
+            let other_translation = tessellation[Number(!i)];
+            let new_tr = add(translation, other_translation);
+            if (tiledata.adjacentTo(tiledata.translate(new_tr, true))) tessellation[i] = new_tr;
+            else tessellation[i] = subtract(translation, other_translation);
+            tessellations[tessellation_index] = tessellation;
+            break;
+          }
+          result = {[mode]: {...current, tiledata, tile_shape_signature: Symbol(), tessellations}};
         } break;
         case 'fill-color': {
           let {tiledata, chunk_signatures} = current;

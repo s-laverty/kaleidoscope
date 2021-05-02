@@ -19,13 +19,17 @@ const CustomAccordionToggle = ({eventKey, children}) => {
 const TessellationCard = ({tool, tiledata, tile_shape_signature, tessellations,
   tessellation_index, tessellation_signature, dispatch, postMessage}) => {
   const [loadSignature, setLoadSignature] = useState();
+  const [preserveTessellation, setPreserveTessellation] = useState();
 
   useEffect(() => {
-    if (tool !== 'tile-shape' && tessellation_signature !== tile_shape_signature) {
+    if (!['tile-shape', 'tile-swap'].includes(tool) &&
+    tessellation_signature !== tile_shape_signature) {
       if (loadSignature !== tile_shape_signature) {
         setLoadSignature(tile_shape_signature);
-        dispatch({type: 'set-current', name: 'tessellations', value: null});
-        dispatch({type: 'set-current', name: 'tessellation_index', value: null});
+        if (!preserveTessellation) {
+          dispatch({type: 'set-current', name: 'tessellations', value: null});
+          dispatch({type: 'set-current', name: 'tessellation_index', value: null});
+        }
         postMessage({type: 'tessellate', tiledata: [...tiledata.keys()]})
         .then(tessellations => dispatch({
           type: 'load-tessellations',
@@ -35,14 +39,19 @@ const TessellationCard = ({tool, tiledata, tile_shape_signature, tessellations,
       }
     }
   });
+
+  useEffect(() => {
+    setPreserveTessellation(tool === 'tile-swap');
+  }, [tool]);
+
   return (
     <Card.Body>
-      {tool === 'tile-shape' ?
+      {['tile-shape', 'tile-swap'].includes(tool) ?
         <Button variant='success d-block mx-auto'
-        onClick={() => dispatch({type: 'select-tool', tool: 'tile-shape'})}>
+        onClick={() => dispatch({type: 'select-tool', tool: null})}>
           <i className='bi-check2-square'/> Confirm Shape
         </Button>
-      : tessellations ?
+      : tessellation_signature === tile_shape_signature ?
         tessellations.length ? <>
           <h5>Choose a tessellation</h5>
           <Form.Group>
@@ -261,12 +270,12 @@ const MainSideBar = ({mode, current, dispatch, postMessage}) => (<>
           <i className='bi-hexagon-half'/><br/>
           Change Tile Shape
         </ToolButton>
-        {/*<ToolButton disabled={current.tool === 'tile-shape' || current.tessellation_index === null}
+        {<ToolButton disabled={current.tool === 'tile-shape' || current.tessellation_index === null}
         active={current.tool === 'tile-swap'}
         onClick={() => dispatch({type: 'select-tool', tool: 'tile-swap'})}>
           <i className='bi-arrow-left-right'/><br/>
           Swap Hexes
-        </ToolButton>*/}
+        </ToolButton>}
       </>}
       {mode === 'hex-freestyle' && <>
         <ToolButton active={current.tool === 'pan'}

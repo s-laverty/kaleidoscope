@@ -1,3 +1,4 @@
+import { multiply } from "mathjs";
 import { HexPoint, HexTile } from "./HexUtils";
 import Point, { PointMap, PointSet } from "./Point";
 
@@ -36,6 +37,7 @@ export const MODES = {
 
 export const TOOLS = {
   'tile-shape': 'Change Tile Shape',
+  'tile-swap': 'Swap Hexes',
   'pan': 'Pan',
   'fill-color': 'Fill Color',
   'clear-color': 'Clear Color',
@@ -206,4 +208,44 @@ export const tessellate = tiledata => {
     });
   };
   return tessellations;
-}
+};
+
+const steps = [
+  [-1, -1],
+  [-1, 0],
+  [-1, 1],
+  [0, -1],
+  [0, 1],
+  [1, -1],
+  [1, 0],
+  [1, 1]
+];
+
+export const getSwaps = (tiledata, tessellation, exclude=[]) => {
+  let swappable = new PointSet();
+  exclude = new PointSet(exclude);
+  let perimeter = tiledata.perimeter().map(([point]) => point);
+  perimeter.reduce((prev, next) => {
+    if (!next.equals(prev)) {
+      if (!exclude.has(next)) {
+        if (swappable.has(next)) {
+          swappable.delete(next);
+          exclude.add(next);
+        } else swappable.add(next);
+      }
+    }
+    return next;
+  }, perimeter[perimeter.length - 1]);
+  let adjacent = new PointSet(tiledata.adjacent());
+  let edges = new PointSet(tiledata.edges());
+  let swaps = new PointMap();
+  swappable.forEach(point =>
+    steps.forEach(step => {
+      let translated = point.add(multiply(step, tessellation));
+      if (adjacent.has(translated) && translated.someAdjacent(adj =>
+        !adj.equals(point) && edges.has(adj)
+      )) swaps.set(translated, point);
+    })
+  );
+  return swaps;
+};
