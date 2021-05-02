@@ -76,18 +76,20 @@ const reducer = (state, {type, ...action}) => {
       let {tool} = current;
       if (color_index === current.color_index) {
         color_index = null;
-        if (tool === 'fill-color') tool = null;
-      } else tool = 'fill-color';
+        if (['fill-color', 'flood-color'].includes(tool)) tool = null;
+      } else if (tool !== 'flood-color') tool = 'fill-color';
       result = {[mode]: {...current, color_index, tool}};
     } break;
     case 'add-color': {
+      let {tool} = current;
       let new_color = `#${Math.floor(Math.random()*(1<<(8*3))).toString(16).padStart(6,'0')}`;
       let colors = current.colors.slice();
       colors.push(new_color);
+      if (tool !== 'flood-color') tool = 'fill-color';
       result = {[mode]: {...current,
         colors,
         color_index: colors.length - 1,
-        tool: 'fill-color'
+        tool
       }};
     } break;
     case 'change-color': {
@@ -107,7 +109,7 @@ const reducer = (state, {type, ...action}) => {
       let {colors, color_index, tool} = current;
       colors = colors.slice(0, color_index)
         .concat(colors.slice(color_index + 1));
-      if (tool === 'fill-color') tool = null;
+      if (['fill-color', 'flood-color'].includes(tool)) tool = null;
       result = {[mode]: {...current, colors, color_index: null, tool}};
     } break;
     case 'swap-colors': {
