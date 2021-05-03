@@ -93,9 +93,10 @@ const reducer = (state, {type, ...action}) => {
       }};
     } break;
     case 'change-color': {
-      let {color} = action;
+      let {color, color_index} = action;
+      color_index = color_index ?? current.color_index;
       let colors = current.colors.slice();
-      colors[current.color_index] = color;
+      colors[color_index] = color;
       result = {[mode]: {...current, colors}};
       update_history = false;
     } break;
@@ -106,11 +107,16 @@ const reducer = (state, {type, ...action}) => {
       result = {[mode]: {...current, colors}};
     } break;
     case 'remove-color': {
+      let {color_index: remove_index} = action;
       let {colors, color_index, tool} = current;
-      colors = colors.slice(0, color_index)
-        .concat(colors.slice(color_index + 1));
-      if (['fill-color', 'flood-color'].includes(tool)) tool = null;
-      result = {[mode]: {...current, colors, color_index: null, tool}};
+      remove_index = remove_index ?? color_index;
+      colors = colors.slice(0, remove_index)
+        .concat(colors.slice(remove_index + 1));
+      if (remove_index === color_index) {
+        if (['fill-color', 'flood-color'].includes(tool)) tool = null;
+        color_index = null;
+      } else if (remove_index < color_index) --color_index;
+      result = {[mode]: {...current, colors, color_index, tool}};
     } break;
     case 'swap-colors': {
       let {color_indices: [i, j]} = action;
