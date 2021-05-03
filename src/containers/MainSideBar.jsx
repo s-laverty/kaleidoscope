@@ -72,6 +72,9 @@ const TessellationCard = ({tool, tiledata, tile_shape_signature, tessellations,
 };
 
 const ColorCard = ({colors, color_index, dispatch}) => {
+  const [dragging, setDragging] = useState(false);
+  const [editIndex, setEditIndex] = useState(null);
+
   const color_picker = useRef();
   const click_color_picker = useRef(false);
 
@@ -89,6 +92,13 @@ const ColorCard = ({colors, color_index, dispatch}) => {
     }
   });
 
+  let checkDrop = e => {
+    if (dragging && e.dataTransfer.types.includes('application/x-kaleidoscope-color')) {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+    }
+  };
+
   return (
     <Card.Body>
       <Row noGutters>
@@ -96,28 +106,25 @@ const ColorCard = ({colors, color_index, dispatch}) => {
           colors.map((color, i) => {
             let button_className = 'shadow-none d-block mx-auto p-1 rounded-circle';
             if (i !== color_index) button_className += ' border-white';
-            let checkDrop = e => {
-              if (e.dataTransfer.types.includes('application/x-kaleidoscope-color-index')) {
-                e.preventDefault();
-                e.dataTransfer.dropEffect = 'move';
-              }
-            };
             return (
               <Col xs={2} key={i}>
-                <DropTarget as={Button} modifier='bg-secondary' size='lg' variant='outline-primary'
+                <DropTarget as={Button} modifier='active' size='lg' variant='outline-primary'
                 className={button_className}
                 onClick={() => dispatch({type: 'select-color', color_index: i})}
                 draggable
                 onDragStart={e => {
                   e.dataTransfer.effectAllowed = 'move';
-                  e.dataTransfer.setData('application/x-kaleidoscope-color-index', i);
+                  e.dataTransfer.setData('application/x-kaleidoscope-color', '');
+                  setDragging(true);
+                  setEditIndex(i);
                 }}
+                onDragEnd={() => setDragging(false)}
                 onDragEnter={checkDrop}
                 onDragOver={checkDrop}
                 onDrop={e => {
                   e.preventDefault();
-                  let other_index = Number(e.dataTransfer.getData('application/x-kaleidoscope-color-index'));
-                  if (other_index !== i) dispatch({type: 'swap-colors', color_indices: [other_index, i]});
+                  if (editIndex !== i) dispatch({type: 'swap-colors', color_indices: [editIndex, i]});
+                  setDragging(false);
                 }}
                 >
                   <ColorIcon color={color}/>
@@ -129,22 +136,39 @@ const ColorCard = ({colors, color_index, dispatch}) => {
       </Row>
       <Form.Row className='mt-2'>
         <Col>
-          <Button block
-          disabled={color_index === null}
-          onClick={() => color_picker.current.click()}>
+          <DropTarget as={Button} modifier='active' block
+          disabled={!dragging && color_index === null}
+          onClick={() => {
+            if (editIndex !== null) {
+              click_color_picker.current = true;
+              setEditIndex(null);
+            } else color_picker.current.click();
+          }}
+          onDragEnter={checkDrop}
+          onDragOver={checkDrop}
+          onDrop={e => {
+            e.preventDefault();
+            color_picker.current.click();
+          }}>
             <i className='bi-sliders'/> Edit
             <input type='color' ref={color_picker}
-            value={colors[color_index]}
-            className='d-none'
-            onChange={e => dispatch({type: 'change-color', color: e.target.value})}/>
-          </Button>
+            value={colors[editIndex ?? color_index]}
+            className='d-none' onClick={e => e.stopPropagation()}
+            onChange={e => dispatch({type: 'change-color', color: e.target.value, color_index: editIndex})}/>
+          </DropTarget>
         </Col>
         <Col>
-          <Button block variant={'danger'}
-          disabled={color_index === null}
-          onClick={() => dispatch({type: 'remove-color'})}>
+          <DropTarget as={Button} modifier='active' block variant='danger'
+          disabled={!dragging && color_index === null}
+          onClick={() => dispatch({type: 'remove-color'})}
+          onDragEnter={checkDrop}
+          onDragOver={checkDrop}
+          onDrop={e => {
+            e.preventDefault();
+            dispatch({type: 'remove-color', color_index: editIndex});
+          }}>
             <i className='bi-dash-circle'/> Remove
-          </Button>
+          </DropTarget>
         </Col>
       </Form.Row>
       <hr/>
