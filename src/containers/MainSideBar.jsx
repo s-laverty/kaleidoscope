@@ -20,8 +20,11 @@ const TessellationCard = ({tool, tiledata, tile_shape_signature, tessellations,
   tessellation_index, tessellation_signature, dispatch, postMessage}) => {
   const [loadSignature, setLoadSignature] = useState();
   const [preserveTessellation, setPreserveTessellation] = useState();
+  const isCancelled = useRef(false);
 
-  useEffect(() => {
+  useEffect(() => () => isCancelled.current = true, []);
+
+  useEffect(async () => {
     if (!['tile-shape', 'tile-swap'].includes(tool) &&
     tessellation_signature !== tile_shape_signature) {
       if (loadSignature !== tile_shape_signature) {
@@ -30,12 +33,14 @@ const TessellationCard = ({tool, tiledata, tile_shape_signature, tessellations,
           dispatch({type: 'set-current', name: 'tessellations', value: null});
           dispatch({type: 'set-current', name: 'tessellation_index', value: null});
         }
-        postMessage({type: 'tessellate', tiledata: [...tiledata.keys()]})
-        .then(tessellations => dispatch({
+        let tessellations = await postMessage({type: 'tessellate', tiledata: [...tiledata.keys()]});
+        if (isCancelled.current) return;
+        dispatch({
           type: 'load-tessellations',
           tessellations,
           signature: tile_shape_signature
-        }));
+        });
+        setLoadSignature(prev => prev === tile_shape_signature ? null : prev);
       }
     }
   });
