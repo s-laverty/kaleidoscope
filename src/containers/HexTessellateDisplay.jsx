@@ -22,6 +22,8 @@ const HexTessellateDisplay = ({dims, zoom, tiledata, tile_shape_signature, tesse
     dispatch({type: 'hex-click', point, shape_action: 'remove'}), [dispatch]);
   const onConfirm = useCallback(() => dispatch({type: 'select-tool', tool: null}),
     [dispatch]);
+  const handlePrimary = useCallback((e, point) =>
+    e.buttons & 1 && dispatch({type: 'hex-click', point}), [dispatch]);
   const onSwap = useCallback((_e, point) =>
     dispatch({type: 'hex-click', add: point, remove: swaps.get(point)}),
     [dispatch, swaps]);
@@ -38,8 +40,9 @@ const HexTessellateDisplay = ({dims, zoom, tiledata, tile_shape_signature, tesse
     [points, '#ffffff']), [hex_points]);
   let outline = show_outline && <HexOutlineSVG points={outline_points}
     signature={tile_shape_signature}/>;
-  let tile = tool === 'tile-swap' ? <HexTileSVG hexes={hex_points_white}/>
-    : <HexTileSVG hexes={hex_points}/>;
+  let tile = <HexTileSVG hexes={hex_points}/>;
+  /*let tile = tool === 'tile-swap' ? <HexTileSVG hexes={hex_points_white}/>
+    : <HexTileSVG hexes={hex_points}/>;*/
   let origin = new HexPoint(0, 0);
   let children = [];
   if (tool !== 'tile-shape' && tessellations && tessellation_index !== null) {
@@ -59,12 +62,14 @@ const HexTessellateDisplay = ({dims, zoom, tiledata, tile_shape_signature, tesse
       tessellation_min = min([tessellation_min, floor(result)], 0);
       tessellation_max = max([tessellation_max, ceil(result)], 0);
     });
+    let default_style = ['fill-color', 'flood-color'].includes(tool) ? {opacity: 0.5} : {};
     for (let i = tessellation_min[0]; i <= tessellation_max[0]; ++i) {
       for (let j = tessellation_min[1]; j <= tessellation_max[1]; ++j) {
         let point = new HexPoint(i, j);
         if (point.equals(origin)) continue;
         children.push(<div key={`tile ${point}`}
-        style={{transform: `translate(${multiply(SPACING_TRANSFORM,
+        style={{...default_style,
+          transform: `translate(${multiply(SPACING_TRANSFORM,
           multiply(point, tessellation)).join('px,')}px`
         }}>
           {outline}
@@ -72,13 +77,8 @@ const HexTessellateDisplay = ({dims, zoom, tiledata, tile_shape_signature, tesse
         </div>);
       }
     }
-    /*let primary_hexes = [];
-    tiledata.forEach((color, point) => {
-      let [x, y] = point;
-      primary_hexes.push(<Hexagon key={point} x={x} y={y} color={color}/>);
-    })*/
   }
-  if (['tile-shape', 'tile-swap'].includes(tool))
+  if (['tile-shape', 'tile-swap'].includes(tool)) {
     children.push(<OverlayTrigger key={origin}
       delay={100}
       overlay={<Tooltip id='confirm-tile-shape-hex-tooltip'>
@@ -88,8 +88,7 @@ const HexTessellateDisplay = ({dims, zoom, tiledata, tile_shape_signature, tesse
       <Hexagon className='confirm btn-success shadow-none cursor-pointer'
       x={0} y={0} onClick={onConfirm}/>
     </OverlayTrigger>);
-  switch(tool) {
-    case 'tile-shape': {
+    if (tool === 'tile-shape') {
       let edges = new PointSet(tiledata.edges());
       for (let point of tiledata.keys()) {
         if (point.equals(origin)) continue;
@@ -105,8 +104,7 @@ const HexTessellateDisplay = ({dims, zoom, tiledata, tile_shape_signature, tesse
         children.push(<Hexagon key={point} x={x} y={y}
           className='add btn-secondary shadow-none cursor-pointer' onClick={onAdd}/>);
       }
-    } break;
-    case 'tile-swap': {
+    } else { // tool === 'tile-swap'
       let remove = swapHover && swaps.get(swapHover);
       for (let point of tiledata.keys()) {
         if (point.equals(origin)) continue;
@@ -121,12 +119,19 @@ const HexTessellateDisplay = ({dims, zoom, tiledata, tile_shape_signature, tesse
           className='add btn-secondary shadow-none cursor-pointer' onClick={onSwap}
           onMouseOver={onSwapOver} onMouseLeave={onSwapLeave}/>);
       }
-    } break;
-    default: children.push(<div key='tile primary'>
-      {outline}
-      {tile}
-    </div>); break;
-  }
+    }
+  } else if (['fill-color', 'flood-color'].includes(tool)) {
+    tiledata.forEach((color, point) => {
+      let [x, y] = point;
+      children.push(<Hexagon key={point} x={x} y={y} color={color} className='cursor-pointer'
+        onMouseDown={handlePrimary} onMouseEnter={handlePrimary}
+        onMouseMove={handlePrimary}/>);
+    });
+  } else children.push(<div key='tile 0,0'>
+    {outline}
+    {tile}
+  </div>);
+
   return (<>
     <div className='HexTessellateDisplay d-flex w-100 h-100 justify-content-center align-items-center'>
       <div className='drop-shadow' style={{transform: `scale(${zoom})`}}>

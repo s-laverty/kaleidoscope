@@ -24,25 +24,25 @@ const TessellationCard = ({tool, tiledata, tile_shape_signature, tessellations,
 
   useEffect(() => () => isCancelled.current = true, []);
 
-  useEffect(async () => {
-    if (!['tile-shape', 'tile-swap'].includes(tool) &&
-    tessellation_signature !== tile_shape_signature) {
-      if (loadSignature !== tile_shape_signature) {
-        setLoadSignature(tile_shape_signature);
-        if (!preserveTessellation) {
-          dispatch({type: 'set-current', name: 'tessellations', value: null});
-          dispatch({type: 'set-current', name: 'tessellation_index', value: null});
-        }
-        let tessellations = await postMessage({type: 'tessellate', tiledata: [...tiledata.keys()]});
-        if (isCancelled.current) return;
-        dispatch({
-          type: 'load-tessellations',
-          tessellations,
-          signature: tile_shape_signature
-        });
-        setLoadSignature(prev => prev === tile_shape_signature ? null : prev);
+  useEffect(() => {
+    const load = async () => {
+      setLoadSignature(tile_shape_signature);
+      if (!preserveTessellation) {
+        dispatch({type: 'set-current', name: 'tessellations', value: null});
+        dispatch({type: 'set-current', name: 'tessellation_index', value: null});
       }
-    }
+      let tessellations = await postMessage({type: 'tessellate', tiledata: [...tiledata.keys()]});
+      if (isCancelled.current) return;
+      dispatch({
+        type: 'load-tessellations',
+        tessellations,
+        signature: tile_shape_signature
+      });
+      setLoadSignature(prev => prev === tile_shape_signature ? null : prev);
+    };
+    if (!['tile-shape', 'tile-swap'].includes(tool) &&
+    tessellation_signature !== tile_shape_signature &&
+    loadSignature !== tile_shape_signature) load();
   });
 
   useEffect(() => {
@@ -193,7 +193,7 @@ const ToolButton = ({children, variant='primary', tooltip, ...other}) => {
   let inner = (<Button block variant={variant} className='h-100' {...other}>
     {children}
   </Button>);
-  let outer = tooltip ? <OverlayTrigger placement='bottom' delay={100} overlay={tooltip}>
+  let outer = tooltip ? <OverlayTrigger placement='top' delay={100} overlay={tooltip}>
     <div className='rounded h-100' tabIndex={0}>
       {inner}
     </div>
@@ -275,7 +275,7 @@ const MainSideBar = ({mode, current, dispatch, postMessage}) => (<>
           </Accordion.Collapse>
         </Card>
       }
-      {mode === 'hex-freestyle' &&
+      {['hex-tessellate', 'hex-freestyle'].includes(mode) &&
         <Card>
           <CustomAccordionToggle eventKey='color'>
             <i className='bi-palette'/> Color -{' '}
@@ -306,7 +306,7 @@ const MainSideBar = ({mode, current, dispatch, postMessage}) => (<>
           Swap Hexes
         </ToolButton>}
       </>}
-      {mode === 'hex-freestyle' && <>
+      {mode === 'hex-freestyle' &&
         <ToolButton active={current.tool === 'pan'}
         onClick={() => dispatch({type: 'select-tool', tool: 'pan'})}
         tooltip={<Tooltip id='pan-button-tooltip'>
@@ -316,6 +316,8 @@ const MainSideBar = ({mode, current, dispatch, postMessage}) => (<>
           <i className='bi-arrows-move h5'/><br/>
           Pan
         </ToolButton>
+      }
+      {['hex-tessellate', 'hex-freestyle'].includes(mode) && <>
         <ToolButton disabled={current.color_index === null}
         active={current.tool === 'fill-color'}
         onClick={() => dispatch({type: 'select-tool', tool: 'fill-color'})}
@@ -342,6 +344,8 @@ const MainSideBar = ({mode, current, dispatch, postMessage}) => (<>
           <i className='bi-paint-bucket h5'/><br/>
           Paint Bucket
         </ToolButton>
+      </>}
+      {mode === 'hex-freestyle' &&
         <ToolButton variant='danger' active={current.tool === 'clear-color'}
         onClick={() => dispatch({type: 'select-tool', tool: 'clear-color'})}
         tooltip={<Tooltip id={'clear-color-button-tooltip'}>
@@ -350,11 +354,15 @@ const MainSideBar = ({mode, current, dispatch, postMessage}) => (<>
           <i className='bi-x-square h5'/><br/>
           Clear Color
         </ToolButton>
+      }
+      {['hex-tessellate', 'hex-freestyle'].includes(mode) &&
         <ToolButton active={current.tool === 'eyedropper-color'}
         onClick={() => dispatch({type: 'select-tool', tool: 'eyedropper-color'})}>
           <i className='bi-eyedropper'/><br/>
           Eye<wbr/>dropper
         </ToolButton>
+      }
+      {mode === 'hex-freestyle' &&
         <ToolButton variant='danger' onClick={() => {
           dispatch({type: 'select-tool', tool: null});
           dispatch({type: 'set', name: 'modal', value: 'clear-all-confirm'});
@@ -362,7 +370,7 @@ const MainSideBar = ({mode, current, dispatch, postMessage}) => (<>
           <i className='bi-trash h5'/><br/>
           Clear All
         </ToolButton>
-      </>}
+      }
     </Form.Row>
     {mode === 'hex-freestyle' &&
       <Alert variant='info' className='mt-3'>

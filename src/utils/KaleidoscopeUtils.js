@@ -5,12 +5,12 @@ import Point, { PointMap, PointSet } from "./Point";
 const VERSION = '0.1.1';
 
 const HISTORY_FIELDS = {
-  'hex-tessellate': ['tiledata'],
+  'hex-tessellate': ['tiledata', 'colors'],
   'hex-freestyle': ['tiledata', 'colors']
 };
 const HISTORY_META_FIELDS = {
   'hex-tessellate': ['tile_shape_signature', 'tessellation_signature', 'tessellations',
-    'tessellation_index', 'tool'],
+    'tessellation_index', 'color_index', 'tool'],
   'hex-freestyle': ['chunk_signatures', 'color_index', 'tool']
 };
 const HISTORY_MAX_LENGTH = 100;
@@ -64,9 +64,10 @@ export const INITIAL_STATE = {
     tiledata: new HexTile([[new HexPoint(0,0), '#ffffff']]),
     tile_shape_signature: Symbol(),
     colors: ['#ff0000','#00ff00','#0000ff'],
+    color_index: null,
     tessellations: null,
-    tessellation_index: null,
     tessellation_signature: null,
+    tessellation_index: null,
     tool: 'tile-shape',
     zoom: 1.0,
     show_outline: true
