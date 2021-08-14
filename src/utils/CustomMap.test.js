@@ -52,7 +52,7 @@ describe('Basic usage tests', () => {
       expect(this.someProperty).toBe('potato');
       expect(map).toBe(map1);
     }, testObj);
-    expect(counter).toBeCalledTimes(6);
+    expect(counter).toHaveBeenCalledTimes(6);
     expect(values).toEqual([...map1.values()]);
     expect(keys).toEqual([...map1.keys()]);
     [...map1.entries()].forEach((entry, i) => {

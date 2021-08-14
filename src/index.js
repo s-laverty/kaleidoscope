@@ -1,7 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
+import Kaleidoscope from './containers/Kaleidoscope';
 import './index.scss';
-import Kaleidoscope from './containers/Kaleidoscope.jsx';
 import reportWebVitals from './reportWebVitals';
 ReactDOM.render(
   <React.StrictMode>

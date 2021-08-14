@@ -94,7 +94,7 @@ export const getHexRange = function(x_range, y_range) {
 
 export const getOutlinePoints = tiledata => {
   let points = [];
-  let perimeter = tiledata.perimeter();
+  let perimeter = [...tiledata.perimeter()];
   perimeter.reduce((prev_point, [point, direction]) => {
     let center = multiply(SPACING_TRANSFORM, point);
     //if (!point.equals(prev_point))

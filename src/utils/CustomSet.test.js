@@ -38,13 +38,13 @@ describe('Basic usage tests', () => {
     let values = [];
     let testObj = {someProperty: 'potato'};
     let counter = jest.fn();
-    set1.forEach(function(value, set) {
+    set1.forEach(function(value, _value2, set) {
       counter();
       values.push(value);
       expect(this.someProperty).toBe('potato');
       expect(set).toBe(set1);
     }, testObj);
-    expect(counter).toBeCalledTimes(6);
+    expect(counter).toHaveBeenCalledTimes(6);
     expect(values).toEqual([...set1]);
     [...set1.entries()].forEach((entry, i) => {
       expect(entry[0]).toBe(values[i]);

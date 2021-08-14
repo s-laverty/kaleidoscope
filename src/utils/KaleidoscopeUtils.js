@@ -1,5 +1,5 @@
 import { multiply } from "mathjs";
-import { HexPoint, HexTile } from "./HexUtils";
+import { HexPoint, HexMap } from "./HexUtils";
 import Point, { PointMap, PointSet } from "./Point";
 
 const VERSION = '0.1.1';
@@ -61,7 +61,7 @@ export const INITIAL_STATE = {
   modal: null,
   mode: 'hex-freestyle',
   'hex-tessellate': {
-    tiledata: new HexTile([[new HexPoint(0,0), '#ffffff']]),
+    tiledata: new HexMap([[new HexPoint(0,0), '#ffffff']]),
     tile_shape_signature: Symbol(),
     colors: ['#ff0000','#00ff00','#0000ff'],
     color_index: null,
@@ -101,7 +101,7 @@ export const saveJSON = (mode, current) => {
       dataType: 'Point',
       data: [...value]
     }
-    if (value instanceof HexTile) return {
+    if (value instanceof HexMap) return {
       dataType: 'HexTile',
       data: [...value]
     };
@@ -122,12 +122,12 @@ export const loadJSON = text => {
     result = JSON.parse(text, (_key, value) => {
       if (value?.dataType === 'HexPoint') return new HexPoint(...value.data);
       if (value?.dataType === 'Point') return new Point(...value.data);
-      if (value?.dataType === 'HexTile') return new HexTile(value.data);
+      if (value?.dataType === 'HexTile') return new HexMap(value.data);
       if (value?.dataType === 'PointMap') return new PointMap(value.data);
       if (value?.dataType === 'PointSet') return new PointSet(value.data);
       // Legacy
       if (value?.dataType === 'Hexagon_Tile')
-        return new HexTile(value.data.map(([point, value]) => [new HexPoint(...point), value]));
+        return new HexMap(value.data.map(([point, value]) => [new HexPoint(...point), value]));
       if (value?.dataType === 'Hexagon_PointMap')
         return new PointMap(value.data.map(([point, value]) => [new Point(...point), value]));
       if (value?.dataType === 'Hexagon_PointSet')
@@ -167,7 +167,7 @@ export const loadJSON = text => {
   if (fields.size) return;
   data = {...INITIAL_STATE[mode], ...data};
   if (data.chunk_signatures) {
-    data.chunk_signatures  = data.chunk_signatures.clone();
+    data.chunk_signatures = new data.chunk_signatures.constructor(data.chunk_signatures);
     for (let point of data.tiledata.keys())
       data.chunk_signatures.set(point.divide(CHUNK_SIZE).floor(), Symbol());
   }
@@ -180,7 +180,7 @@ export const loadJSON = text => {
 }
 
 export const tessellate = tiledata => {
-  let explored = new PointSet([new HexPoint(0,0)]);
+  let explored = new PointSet().add(new HexPoint(0, 0));
   let path = [];
   const explore = translation => {
     if (explored.has(translation)) return;
@@ -202,9 +202,9 @@ export const tessellate = tiledata => {
     path.forEach(([translation2, tile2]) => {
       if (exclude2.has(translation2)) return;
       if (tile1.adjacentTo(tile2) && !tile1.overlaps(tile2)) {
-        let merged = new HexTile(tiledata).merge(tile1).merge(tile2)
+        let merged = new HexMap(tiledata).merge(tile1).merge(tile2)
           .merge(tile1.translate(translation2));
-        if (!merged.holes().length) {
+        if (merged.holes().next().done) {
           tessellations.push([translation1, translation2]);
           exclude1.add(translation2);
           exclude2.add(translation1.subtract(translation2));
@@ -229,7 +229,7 @@ const steps = [
 export const getSwaps = (tiledata, tessellation, exclude=[]) => {
   let swappable = new PointSet();
   exclude = new PointSet(exclude);
-  let perimeter = tiledata.perimeter().map(([point]) => point);
+  let perimeter = [...tiledata.perimeter()].map(([point]) => point);
   perimeter.reduce((prev, next) => {
     if (!next.equals(prev)) {
       if (!exclude.has(next)) {
@@ -247,7 +247,7 @@ export const getSwaps = (tiledata, tessellation, exclude=[]) => {
   swappable.forEach(point =>
     steps.forEach(step => {
       let translated = point.add(multiply(step, tessellation));
-      if (adjacent.has(translated) && translated.someAdjacent(adj =>
+      if (adjacent.has(translated) && translated.adjacent.some(adj =>
         !adj.equals(point) && edges.has(adj)
       )) swaps.set(translated, point);
     })

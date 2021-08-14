@@ -1,12 +1,30 @@
-import './HexTessellateDisplay.scss';
-import Hexagon, { SPACING_TRANSFORM, getHexRange, HexOutlineSVG, HexTileSVG, getOutlinePoints, getHexPoints } from '../components/Hexagon';
-import { Button, OverlayTrigger, Tooltip } from 'react-bootstrap';
-import { PointSet } from '../utils/Point';
-import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ceil, divide, floor, inv, max, min, multiply } from 'mathjs';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Button, OverlayTrigger, Tooltip } from 'react-bootstrap';
+import Hexagon, { getHexPoints, getHexRange, getOutlinePoints, HexOutlineSVG, HexTileSVG, SPACING_TRANSFORM } from '../components/Hexagon';
 import { HexPoint } from '../utils/HexUtils';
 import { getSwaps } from '../utils/KaleidoscopeUtils';
+import { PointSet } from '../utils/Point';
+import './HexTessellateDisplay.scss';
+/** @typedef {import('react').Dispatch<*>} Dispatch */
+/** @typedef {import('../utils/Point').PointMap<V>} PointMap @template V */
 
+/**
+ *  This component represents the display area for the hex tessellation editor view.
+ * 
+ * @param {object} props
+ * @param {[number, number]} props.dims - The viewbox size in pixels as an array [width, height].
+ * @param {number} props.zoom - How much the user has zoomed in our out on the display.
+ * @param {PointMap<string>} props.tiledata - The colors of the individual hexes.
+ * @param {symbol} props.tile_shape_signature - The edit signature of the tile's shape.
+ * @param {[number, number][]} props.tessellations - A list of possible tessellations for the given
+ * tile shape.
+ * @param {number} props.tessellation_index - The index of the currently-selected tessellation.
+ * @param {string} props.tool - The current tool being used to edit the project.
+ * @param {boolean} props.show_outline - Whether to show an outline around each tile.
+ * @param {Dispatch} props.dispatch - The dispatch function for the app state reducer.
+ * @returns {JSX.Element}
+ */
 const HexTessellateDisplay = ({dims, zoom, tiledata, tile_shape_signature, tessellations,
   tessellation_index, tool, show_outline, dispatch}) => {
   const tessellation = tessellations?.[tessellation_index];
@@ -36,13 +54,9 @@ const HexTessellateDisplay = ({dims, zoom, tiledata, tile_shape_signature, tesse
   }, [tool]);
   const outline_points = useMemo(() => getOutlinePoints(tiledata), [tiledata]);
   const hex_points = useMemo(() => getHexPoints(tiledata), [tiledata]);
-  const hex_points_white = useMemo(() => hex_points.map(([points]) =>
-    [points, '#ffffff']), [hex_points]);
   let outline = show_outline && <HexOutlineSVG points={outline_points}
     signature={tile_shape_signature}/>;
   let tile = <HexTileSVG hexes={hex_points}/>;
-  /*let tile = tool === 'tile-swap' ? <HexTileSVG hexes={hex_points_white}/>
-    : <HexTileSVG hexes={hex_points}/>;*/
   let origin = new HexPoint(0, 0);
   let children = [];
   if (tool !== 'tile-shape' && tessellations && tessellation_index !== null) {
