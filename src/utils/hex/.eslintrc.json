@@ -1,0 +1,6 @@
+{
+  "rules": {
+    "no-bitwise": "off",
+    "no-plusplus": "off"
+  }
+}

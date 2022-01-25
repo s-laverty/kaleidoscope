@@ -1,7 +1,16 @@
 import { useEffect, useRef, useState } from 'react';
 import { Button, Col, Form, InputGroup, Modal } from 'react-bootstrap';
 import { saveJSON } from '../utils/KaleidoscopeUtils';
+/** @typedef {import('react').Dispatch<*>} Dispatch */
 
+/**
+ * This component shows the "save file" modal.
+ * @param {object} props 
+ * @param {string} props.mode - The current application mode.
+ * @param {*} props.current - The current mode-specific application state.
+ * @param {Dispatch} props.dispatch - The state reducer dispatch function.
+ * @returns {JSX.Element}
+ */
 const SaveFileModal = ({mode, current, dispatch, ...other}) => {
   const [filename, setFilename] = useState('Kaleidoscope Project');
   const [fileURI, setFileURI] = useState();

@@ -11,7 +11,6 @@ import { CHUNK_SIZE } from '../utils/KaleidoscopeUtils';
 export const Chunk = memo(
   /**
    * This component represents a chunk of hexes visible in the freestyle editor view.
-   * 
    * @param {object} props
    * @param {PointMap<string>} props.tiledata - The colors of the individual hexes.
    * @param {number} props.x - The x-coordinate of the chunk (in chunks).
@@ -52,7 +51,6 @@ export const Chunk = memo(
 
 /**
  * This component represents the display area for the hex freestyle editor view.
- * 
  * @param {object} props
  * @param {[number, number]} props.dims - The viewbox size in pixels as an array [width, height].
  * @param {PointMap<string>} props.tiledata - The colors of the individual hexes.

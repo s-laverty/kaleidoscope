@@ -1,12 +1,12 @@
-import { HexComponent, HexPoint } from "./HexUtils";
-import { PointSet } from "./Point";
+import { HexComponent, HexMap, HexPoint } from './hex/HexUtils';
+import { PointSet } from './Point';
 
 describe('HexPoint tests', () => {
   test('step tests', () => {
     const p1 = new HexPoint(29, -92);
-    [...Array(6).keys()].forEach(
-      i => expect([...p1.step(i)]).toEqual([...p1.add(HexPoint.Steps[i])])
-    );
+    [...Array(6).keys()].forEach((i) => (
+      expect([...p1.step(i)]).toEqual([...p1.add(HexPoint.Steps[i])])
+    ));
   });
   test('adjacent tests', () => {
     const p1 = new HexPoint(29, -92);
@@ -307,5 +307,41 @@ describe('HexComponent tests', () => {
       [points.get('-1,1'), 0b111111],
       [points.get('0,-1'), 0b111111]
     ]))
+  });
+});
+
+describe('HexMap tests', () => {
+  const points = new Map(/** @type {[number, number][]} */([
+    [0, -2],
+    [1, -2],
+    [2, -2],
+    [-1, -1],
+    [0, -1],
+    [1, -1],
+    [2, -1],
+    [-2, 0],
+    [-1, 0],
+    [0, 0],
+    [1, 0],
+    [2, 0],
+    [-2, 1],
+    [-1, 1],
+    [0, 1],
+    [1, 1],
+    [-2, 2],
+    [-1, 2],
+    [0, 2],
+  ]).map(point => [String(point), new HexPoint(...point)]));
+  let map1 = /** @type {HexMap<*>} */ (null);
+  let map2 = /** @type {HexMap<*>} */ (null);
+  let map3 = /** @type {HexMap<*>} */ (null);
+  beforeEach(() => {
+    map1 = new HexMap();
+    map2 = new HexMap();
+    map3 = new HexMap();
+  });
+  test('component tests', () => {
+    map1.set(points.get('2,0', 'a value')).set(points.get('0,0'), null);
+    expect(map1.isConnected()).toBe(false);
   });
 });

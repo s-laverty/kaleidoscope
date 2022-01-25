@@ -1,7 +1,16 @@
 import { useState } from 'react';
 import { Alert, Button, Form, Modal } from 'react-bootstrap';
 import { loadJSON, MODES } from '../utils/KaleidoscopeUtils';
+/** @typedef {import('react').Dispatch<*>} Dispatch */
 
+/**
+ * This component shows the "load file" modal.
+ * @param {object} props 
+ * @param {string} props.mode - The current application mode.
+ * @param {*} props.current - The current mode-specific application state.
+ * @param {Dispatch} props.dispatch - The state reducer dispatch function.
+ * @returns {JSX.Element}
+ */
 const LoadFileModal = ({mode, current, dispatch, ...other}) => {
   const [loadState, setLoadState] = useState();
   const [loadResult, setLoadResult] = useState();

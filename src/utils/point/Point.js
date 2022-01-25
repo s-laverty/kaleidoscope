@@ -1,13 +1,12 @@
-import { add, ceil, deepEqual, divide, floor, multiply, subtract } from "mathjs";
-import CustomMap from "./CustomMap";
-import CustomSet from "./CustomSet";
+import {
+  add, ceil, deepEqual, divide, floor, multiply, subtract,
+} from 'mathjs';
 
 /**
  * A point is an immutable array representing a n-dimensional point.
  * @extends {Array<number>}
  */
 export default class Point extends Array {
-
   /**
    * Checks whether two points are equal.
    * @param {Point} p1 - The first point to compare for equality.
@@ -80,36 +79,4 @@ export default class Point extends Array {
    * @returns {Point} The point with all components rounded up.
    */
   ceil() { return new this.constructor(...ceil([...this])); }
-}
-
-/**
- * A PointMap implements the functionality of the builtin Map using Points as keys.
- * @template V - The value type.
- * @extends {CustomMap<Point, V>}
- */
-export class PointMap extends CustomMap {
-
-  /**
-   * Creates a PointMap.
-   * @param {Iterable<[Point, V]>} [entries] - An optional iterable of key-value pairs used to
-   * initialize the map.
-   */
-  constructor(entries) {
-    super(entries, String);
-  }
-}
-
-/**
- * A PointSet implements the functionality of the builtin Set using Points as entries.
- * @extends {CustomSet<Point>}
- */
-export class PointSet extends CustomSet {
-
-  /**
-   * Creates a PointSet.
-   * @param {Iterable<Point>} [entries] - An optional iterable of points used to initialize the set.
-   */
-  constructor(entries) {
-    super(entries, String);
-  }
 }

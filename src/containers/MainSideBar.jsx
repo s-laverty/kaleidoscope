@@ -56,7 +56,7 @@ const TessellationCard = ({ tool, tiledata, tile_shape_signature, tessellations,
       {['tile-shape', 'tile-swap'].includes(tool) ?
         <Button variant='success d-block mx-auto'
           onClick={() => dispatch({ type: 'select-tool', tool: null })}>
-          <i className='bi-check2-square' /> Confirm Shape
+          <i className='bi-check-lg' /> Confirm Shape
         </Button>
         : tessellation_signature === tile_shape_signature ?
           tessellations.length ? <>
