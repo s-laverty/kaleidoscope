@@ -99,6 +99,7 @@ export default class HexMap extends PointMap {
     return trace;
   }
 
+  /** Clears all entries in the map. */
   clear() {
     super.clear();
 
@@ -109,6 +110,11 @@ export default class HexMap extends PointMap {
     this.#componentPoints.clear();
   }
 
+  /**
+   * Attempts to delete an entry with a given point.
+   * @param {HexPoint} point - The point of the entry to delete.
+   * @returns {boolean} Whether the entry was deleted.
+   */
   delete(point) {
     if (super.delete(point)) {
       // Update the surrounding edge and adjacent hexes.
@@ -150,6 +156,12 @@ export default class HexMap extends PointMap {
     return false;
   }
 
+  /**
+   * Associates the given opint with the given value in the map.
+   * @param {HexPoint} point - The point to associate with the value.
+   * @param {V} value - The value to associate with the point.
+   * @returns {HexMap<V>} The HexMap object.
+   */
   set(point, value) {
     if (!this.has(point)) {
       // Update the surrounding edge and adjacent hexes.
