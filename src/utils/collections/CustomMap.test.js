@@ -100,7 +100,7 @@ describe('Basic usage tests.', () => {
       expect(map).toBe(map1);
     }, testObj);
     expect(counter).toHaveBeenCalledTimes(6);
-    expect(entries.length).toBe(map1.size);
+    expect(entries).toHaveLength(map1.size);
     expect(entries).toEqual(expect.arrayContaining(map1.entries()));
   });
 });
