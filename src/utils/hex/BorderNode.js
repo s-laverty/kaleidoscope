@@ -65,16 +65,16 @@ export default class BorderNode {
   get concavity() { return this.#concavity; }
 
   /**
-   * Gets an iterator of numbers which indicate the start of each contiguous edge in this border
-   * node, moving clockwise from the right.
-   * @returns {number[]} An iterator of numbers indicating contiguous edge starts.
+   * Gets an array of numbers which indicate the start of each continuous edge sequence in this
+   * border node, moving clockwise from the right.
+   * @returns {number[]} An array of numbers indicating the starts of continuous edge sequences.
    */
   edgeStarts() { return HexPoint.argSteps.filter((i) => this.#edgeStarts & (1 << i)); }
 
   /**
-   * Gets an iterator of numbers which indicate the start of each contiguous gap (section between
-   * edges) in this border node, moving clockwise from the right.
-   * @returns {number[]} An iterator of numbers indicating contiguous gap starts.
+   * Gets an array of numbers which indicate the start of each continuous gap sequence (lack of an
+   * edge) in this border node, moving clockwise from the right.
+   * @returns {number[]} An array of numbers indicating the starts of continuous gap sequences.
    */
   gapStarts() { return HexPoint.argSteps.filter((i) => this.#gapStarts & (1 << i)); }
 }

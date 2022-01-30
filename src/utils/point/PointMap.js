@@ -9,7 +9,7 @@ import CustomMap from '../collections/CustomMap';
 export default class PointMap extends CustomMap {
   /**
    * Creates a PointMap.
-   * @param {[Point,V][] | Map<Point,V> | CustomMap<Point,V>} [entries] - An optional collection of
+   * @param {[Point,V][] | Map<Point,V> | PointMap<V>} [entries] - An optional collection of
    * key-value pairs used to initialize the point map.
    */
   constructor(entries) { super(entries, String); }

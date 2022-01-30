@@ -8,8 +8,8 @@ import CustomSet from '../collections/CustomSet';
 export default class PointSet extends CustomSet {
   /**
    * Creates a PointSet.
-   * @param {Point[] | Set<Point> | CustomSet<Point>} [values] - An optional collection of points
-   * used to initialize the point set.
+   * @param {Point[] | Set<Point> | PointSet} [values] - An optional collection of points used to
+   * initialize the point set.
    */
   constructor(values) { super(values, String); }
 }
