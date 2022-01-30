@@ -16,7 +16,7 @@ export default class HexComponent {
    */
 
   /**
-   * An iterator of point-edges tuples.
+   * An array of point-edges tuples.
    * @typedef {HexPointEdges[]} BorderList
    */
 
@@ -145,15 +145,13 @@ export default class HexComponent {
      * @param {HexPoint} point - The point to move from this to the new component.
      */
     const transfer = (point) => {
-      // Check if this point has already been transfered.
-      if (!this.#points.delete(point)) return;
-
       // Transfer this point
+      this.#points.delete(point);
       component.#points.add(point);
       // Check all adjacent non-border points.
       point.adjacent.forEach((adjPoint, i) => {
-        if (!this.#borderPoints.has(adjPoint)) transfer(adjPoint);
-        else {
+        if (this.has(adjPoint)) transfer(adjPoint);
+        else if (this.#borderPoints.has(adjPoint)) {
           // Update the adjacent border node.
           const adjData = this.#borderPoints.get(adjPoint);
 
@@ -161,8 +159,6 @@ export default class HexComponent {
           if (adjData[1] === border) {
             // Split the shared border node between this component and the new component.
             const edge = 1 << (i + 3) % 6;
-
-            // Remove the border edge from this component.
             adjData[0] &= ~edge;
             if (!adjData[0]) {
               border.delete(adjPoint);
@@ -180,8 +176,6 @@ export default class HexComponent {
             // Transfer ownership of the separate border to the new comopnent.
             this.#borders.delete(adjData[1]);
             component.#borders.add(adjData[1]);
-
-            // Clone mappings.
             adjData[1].forEach((borderPoint) => {
               const borderData = this.#borderPoints.get(borderPoint);
               this.#borderPoints.delete(borderPoint);
@@ -203,7 +197,7 @@ export default class HexComponent {
   }
 
   /**
-   * Returns an iterator listing all the border node edges in a border.
+   * Returns an array listing all the border node edges in a border.
    * @param {Border} border - The border to export.
    * @returns {BorderList} An array of point-edges tuples.
    */
@@ -277,10 +271,10 @@ export default class HexComponent {
     let diffBorders = 1;
     const { adjacent } = point;
     adjacent.forEach((adjPoint, i) => {
-      if (!this.#borderPoints.has(adjPoint)) edges |= 1 << i;
+      if (this.has(adjPoint)) edges |= 1 << i;
       else {
-        const data = this.#borderPoints.get(adjPoint);
-        const [, adjBorder] = data;
+        const adjData = this.#borderPoints.get(adjPoint);
+        const [, adjBorder] = adjData;
 
         // Merge all adjacent borders into one.
         if (!border) border = adjBorder;
@@ -297,9 +291,9 @@ export default class HexComponent {
         }
 
         // Update adjacent border nodes, possibly deleting some.
-        data[0] &= ~(1 << (i + 3) % 6);
+        adjData[0] &= ~(1 << (i + 3) % 6);
 
-        if (!data[0]) {
+        if (!adjData[0]) {
           border.delete(adjPoint);
           this.#borderPoints.delete(adjPoint);
         }
@@ -309,6 +303,7 @@ export default class HexComponent {
     // If there was no border around the removed point, then it creates a new hole.
     if (!border) border = new PointSet();
 
+    // Add the removed point as a border node.
     border.add(point);
     this.#borderPoints.set(point, [edges, border]);
 
@@ -329,19 +324,22 @@ export default class HexComponent {
 
   /**
    * Executes a callback on each hex in the component.
-   * @param {(value: HexPoint, value2: HexPoint, set: PointSet) => void}
-   * callbackFn - The callback to execute on each hex.
+   * @param {(point: HexPoint, point2: HexPoint, component: HexComponent) => void} callbackfn - The
+   * callback to execute on each hex.
    * @param {*} thisArg - Argument to use as "this" when executing the callback. Undefined by
    * default.
    */
-  forEach(callbackFn, thisArg) { this.#points.forEach(callbackFn, thisArg); }
+  forEach(callbackfn, thisArg) {
+    const callback = (value, value2) => callbackfn.call(thisArg, value, value2, this);
+    this.#points.forEach(callback);
+  }
 
   /**
    * Checks whether another component overlaps this one.
    * @param {HexComponent} other - The component to compare.
    * @returns {boolean} Whether the other component overlaps this one.
    */
-  overlaps(other) { return this.#points.values().some(other.has); }
+  overlaps(other) { return this.#points.values().some(other.has, other); }
 
   /**
    * Merges another component into this one.
@@ -405,7 +403,7 @@ export default class HexComponent {
     });
 
     // Split the merged border into connected sequences of border nodes.
-    while (border.size) this.#splitBorder(border, border.values().next().value);
+    while (border.size) this.#splitBorder(border, border.values()[0]);
 
     this.#borders.delete(border);
 
@@ -413,24 +411,24 @@ export default class HexComponent {
   }
 
   /**
-   * Returns an array of listings of all the border node edges for each border.
+   * Returns an array of arrays of all the border nodes in each border.
    * @returns {BorderList[]} An array of arrays of point-edges tuples.
    */
-  borders() { return [...this.#borders.values()].map(this.#exportBorder); }
+  borders() { return [...this.#borders.values()].map(this.#exportBorder, this); }
 
   /**
-   * Returns an iterator listing all the border node edges in the perimeter.
-   * @returns {BorderList} An iterator of point-edges tuples.
+   * Returns an array of all the border nodes in the perimeter.
+   * @returns {BorderList} An array of point-edges tuples.
    */
   perimeter() { return this.#exportBorder(this.#perimeter); }
 
   /**
-   * Returns an array of listings of all the border node edges for each hole.
+   * Returns an array of arrays of all the border nodes in each hole.
    * @returns {BorderList[]} An array of arrays of point-edges tuples.
    */
   holes() {
     return [...this.#borders.values()].filter((border) => border !== this.#perimeter)
-      .map(this.#exportBorder);
+      .map(this.#exportBorder, this);
   }
 
   /**

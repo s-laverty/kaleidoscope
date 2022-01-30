@@ -1,6 +1,7 @@
 import PointMap from '../point/PointMap';
 import PointSet from '../point/PointSet';
 import HexComponent from './HexComponent';
+/** @typedef {import('./HexPoint').default} HexPoint */
 /** @typedef {import('./HexPoint').HexPointEdge} HexPointEdge */
 /** @typedef {import('./HexPoint').Edges} Edges */
 
@@ -43,7 +44,7 @@ export default class HexMap extends PointMap {
 
   /**
    * Creates a HexMap.
-   * @param {[HexPoint,V][] | Map<HexPoint,V> | CustomMap<HexPoint,V>} [entries] - An optional
+   * @param {[HexPoint,V][] | Map<HexPoint,V> | HexMap<HexPoint,V>} [entries] - An optional
    * collection of key-value pairs used to initialize the map.
    */
   constructor(entries) {
@@ -71,8 +72,8 @@ export default class HexMap extends PointMap {
   }
 
   /**
-   * Traces an edge of a component in a complete cycle and returns an array of tuples indicating
-   * each step.
+   * Traces an edge of a component in a complete cycle (left to right from inside the component) and
+   * returns an array of tuples indicating each step.
    * @param {HexPointEdge} start - A HexPoint & edge number tuple indicating the start of the trace
    * (will be yielded first).
    * @returns {BorderTrace} An array of HexPoint & edge number tuples forming a complete traversal
@@ -217,7 +218,7 @@ export default class HexMap extends PointMap {
 
   /**
    * Returns an array of adjacent HexPoints to those in the HexMap.
-   * @returns {IterableIterator<HexPoint>} An array of adjacent HexPoints.
+   * @returns {HexPoint[]} An array of adjacent HexPoints.
    */
   adjacent() { return this.#adjacent.keys(); }
 
@@ -226,14 +227,14 @@ export default class HexMap extends PointMap {
    * @param {HexMap<V>} other - The HexMap to compare.
    * @returns {boolean} Whether the other HexMap overlaps this one.
    */
-  overlaps(other) { return this.keys().some(other.has); }
+  overlaps(other) { return this.keys().some(other.has, other); }
 
   /**
    * Checks whether another HexMap is adjacent to this one.
    * @param {HexMap<V>} other - The HexMap to compare.
    * @returns {boolean} Whether the other HexMap is adjacent to this one.
    */
-  adjacentTo(other) { return this.#adjacent.keys().some(other.has); }
+  adjacentTo(other) { return this.#adjacent.keys().some(other.has, other); }
 
   /**
    * Merges another HexMap into this HexMap.
@@ -256,7 +257,7 @@ export default class HexMap extends PointMap {
   isConnected() { return this.#components.size === 1; }
 
   /**
-   * Returns an array of point-edge tuples tracing the perimeter.
+   * Returns an array of point-edge tuples tracing the perimeter, clockwise.
    * @returns {BorderTrace} An array of point-edge tuples.
    */
   perimeter() {
@@ -272,7 +273,8 @@ export default class HexMap extends PointMap {
   }
 
   /**
-   * Returns an array of iterators of point-edge tuples tracing a hole for each hole.
+   * Returns an array of arrays of point-edge tuples tracing the perimeter of a hole for each hole,
+   * counter-clockwise.
    * @returns {BorderTrace[]} An array of arrays of point-edge tuples.
    */
   holes() {
