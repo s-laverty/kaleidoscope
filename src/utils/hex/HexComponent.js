@@ -12,7 +12,7 @@ import HexPoint from './HexPoint';
 export default class HexComponent {
   /**
    * A set of border node points forms a complete border around or inside the component.
-   * @typedef {PointSet} Border
+   * @typedef {PointSet<HexPoint>} Border
    */
 
   /**
@@ -22,7 +22,7 @@ export default class HexComponent {
 
   /**
    * A set of connected hexes making up this Component.
-   * @type {PointSet}
+   * @type {PointSet<HexPoint>}
    */
   #points;
 
@@ -35,13 +35,13 @@ export default class HexComponent {
   /**
    * A mapping of border node points to tuples of border component edges and a reference to the
    * border that contains the border node.
-   * @type {PointMap<[Edges, Border]>}
+   * @type {PointMap<[Edges, Border], HexPoint>}
    */
   #borderPoints = new PointMap();
 
   /**
    * A reference to the border around the exterior of the component.
-   * @type {PointSet}
+   * @type {PointSet<HexPoint>}
    */
   #perimeter;
 

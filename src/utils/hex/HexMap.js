@@ -9,7 +9,7 @@ import HexComponent from './HexComponent';
  * HexMap is an extension of PointMap which keeps track of all connected components of hexes within
  * the map.
  * @template V - The value type.
- * @extends {PointMap<V>}
+ * @extends {PointMap<V, HexPoint>}
  */
 export default class HexMap extends PointMap {
   /**
@@ -20,13 +20,13 @@ export default class HexMap extends PointMap {
   /**
    * A mapping of points on the edges of components to edges indicating the exterior of the
    * component.
-   * @type {PointMap<Edges>}
+   * @type {PointMap<Edges, HexPoint>}
    */
   #edges;
 
   /**
    * A mapping of points adjacent to components to edges indicating the exterior of the component.
-   * @type {PointMap<Edges>}
+   * @type {PointMap<Edges, HexPoint>}
    */
   #adjacent;
 
@@ -38,13 +38,13 @@ export default class HexMap extends PointMap {
 
   /**
    * A mapping of hex points to the components that contain them.
-   * @type {PointMap<HexComponent>}
+   * @type {PointMap<HexComponent, HexPoint>}
    */
   #componentPoints = new PointMap();
 
   /**
    * Creates a HexMap.
-   * @param {[HexPoint,V][] | Map<HexPoint,V> | HexMap<HexPoint,V>} [entries] - An optional
+   * @param {[HexPoint, V][] | Map<HexPoint, V> | HexMap<HexPoint, V>} [entries] - An optional
    * collection of key-value pairs used to initialize the map.
    */
   constructor(entries) {
@@ -158,7 +158,7 @@ export default class HexMap extends PointMap {
   }
 
   /**
-   * Associates the given opint with the given value in the map.
+   * Associates the given point with the given value in the map.
    * @param {HexPoint} point - The point to associate with the value.
    * @param {V} value - The value to associate with the point.
    * @returns {HexMap<V>} The HexMap object.
@@ -303,6 +303,7 @@ export default class HexMap extends PointMap {
   translate(translation, shallow = false) {
     // For a shallow translation, simply map the hexes to a new set.
     if (shallow) {
+      /** @type {PointSet<HexPoint>} */
       const set = new PointSet();
       this.forEach((_value, point) => set.add(point.add(translation)));
 

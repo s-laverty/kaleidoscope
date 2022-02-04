@@ -3,12 +3,13 @@ import CustomSet from '../collections/CustomSet';
 
 /**
  * A PointSet implements the functionality of the builtin Set using Points as entries.
- * @extends {CustomSet<Point>}
+ * @template {Point} [T=Point] - The entry type (must be a subclass of Point).
+ * @extends {CustomSet<T>}
  */
 export default class PointSet extends CustomSet {
   /**
    * Creates a PointSet.
-   * @param {Point[] | Set<Point> | PointSet} [values] - An optional collection of points used to
+   * @param {T[] | Set<T> | PointSet<T>} [values] - An optional collection of points used to
    * initialize the point set.
    */
   constructor(values) { super(values, String); }
