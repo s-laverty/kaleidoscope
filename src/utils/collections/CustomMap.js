@@ -47,7 +47,7 @@ export default class CustomMap {
 
   /**
    * Generates a custom map.
-   * @param {[K,V][] | Map<K,V> | CustomMap<K,V>} [entries] - An optional collection of key-value
+   * @param {[K, V][] | Map<K, V> | CustomMap<K, V>} [entries] - An optional collection of key-value
    * pairs used to initialize the map.
    * @param {(key: K) => *} [hashFn] - An optional custom hash function that will be used to store
    * and access entries in the map.
@@ -273,7 +273,7 @@ export default class CustomMap {
 
   /**
    * Executes a callback on each entry in the map.
-   * @param {(value: V, key: K, map: CustomMap<K,V>) => void} callbackfn - The callback to execute
+   * @param {(value: V, key: K, map: CustomMap<K, V>) => void} callbackfn - The callback to execute
    * on each entry.
    * @param {*} thisArg - Argument to use as "this" when executing the callback. undefined by
    * default.
