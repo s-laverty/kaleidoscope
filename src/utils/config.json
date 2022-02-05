@@ -1,0 +1,71 @@
+{
+  "hexGrid": {
+    "chunkSize": 8
+  },
+  "modes": {
+    "hexTessellate": "Hexagon Tessellation",
+    "hexFreestyle": "Hexagon Freestyle"
+  },
+  "tools": {
+    "tileShape": "Change Tile Shape",
+    "tileSwap": "Swap Hexes",
+    "pan": "Pan",
+    "colorFill": "Fill Color",
+    "colorFlood": "Paint Bucket",
+    "colorClear": "Clear Color",
+    "colorEyedropper": "Eyedropper"
+  },
+  "zoom": {
+    "min": 0.2,
+    "max": 3.0,
+    "wheelSensitivity": 0.0025
+  },
+  "history": {
+    "triggerFields": {
+      "hexTessellate": [
+        "tiledata",
+        "colors"
+      ],
+      "hexFreestyle": [
+        "tiledata",
+        "colors"
+      ]
+    },
+    "savedFields": {
+      "hexTessellate": [
+        "tiledata",
+        "colors",
+        "tileShapeSignature",
+        "tessellationSignature",
+        "tessellations",
+        "tessellation_index",
+        "colorIndex",
+        "tool"
+      ],
+      "hexFreestyle": [
+        "tiledata",
+        "colors",
+        "chunkSignatures",
+        "colorIndex",
+        "tool"
+      ]
+    },
+    "maxLength": 100
+  },
+  "savedFields": {
+    "hexTessellate": [
+      "tiledata",
+      "colors",
+      "tessellations",
+      "showOutline",
+      "zoom"
+    ],
+    "hexFreestyle": [
+      "tiledata",
+      "colors",
+      "pan",
+      "zoom",
+      "showEmpty"
+    ]
+  }
+}
