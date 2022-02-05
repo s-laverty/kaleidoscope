@@ -1,5 +1,4 @@
 import PointMap from '../point/PointMap';
-import PointSet from '../point/PointSet';
 import HexComponent from './HexComponent';
 /** @typedef {import('./HexPoint').default} HexPoint */
 /** @typedef {import('./HexPoint').HexPointEdge} HexPointEdge */
@@ -296,20 +295,9 @@ export default class HexMap extends PointMap {
   /**
    * Creates and returns a translated version of this HexMap.
    * @param {HexPoint} translation - The translation to apply to this HexMap.
-   * @param {boolean} [shallow] - Whether to return a basic PointSet instead of a HexMap. False by
-   * default.
    * @returns {HexMap<V>} The translated HexMap.
    */
-  translate(translation, shallow = false) {
-    // For a shallow translation, simply map the hexes to a new set.
-    if (shallow) {
-      /** @type {PointSet<HexPoint>} */
-      const set = new PointSet();
-      this.forEach((_value, point) => set.add(point.add(translation)));
-
-      return set;
-    }
-
+  translate(translation) {
     // Initialize a new HexMap and translate and copy this one.
     const newMap = /** @type {HexMap<V>} */ (new this.constructor());
     this.forEach((value, point) => super.set.call(newMap, point.add(translation), value));
