@@ -71,10 +71,10 @@ describe('Basic usage tests.', () => {
       [points.get('2,0'), 'green'], [points.get('2,-1'), 'green'], [points.get('-1,1'), 'yellow'],
       [points.get('2,-2'), 'green'], [points.get('-2,2'), 'yellow'],
     ]));
-    expect(map2.has(points.get('2,-1', 'green'))).toBe(true);
-    expect(map2.get(points.get('2,-1', 'green'))).toBe('green');
-    map2.set(points.get('2,-1', 'green'), 'orange');
-    expect(map2.get(points.get('2,-1', 'green'))).toBe('orange');
+    expect(map2.has(points.get('2,-1'))).toBe(true);
+    expect(map2.get(points.get('2,-1'))).toBe('green');
+    map2.set(points.get('2,-1'), 'orange');
+    expect(map2.get(points.get('2,-1'))).toBe('orange');
     expect(map2.size).toBe(5);
     expect(map2.has(points.get('2,-1'))).toBe(true);
     expect(map2.entries()).toEqual(expect.arrayContaining([
