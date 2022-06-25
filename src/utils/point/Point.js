@@ -2,6 +2,9 @@ import {
   add, ceil, deepEqual, divide, floor, multiply, subtract,
 } from 'mathjs';
 
+/** @type {Map<string, Point>} */
+const canonical = new Map();
+
 /**
  * A point is an immutable array representing a n-dimensional point.
  * @extends {Array<number>}
@@ -14,6 +17,20 @@ export default class Point extends Array {
    * @returns {boolean} Whether the points are exactly equal.
    */
   static equal(p1, p2) { return deepEqual(p1, p2); }
+
+  /**
+   * Gets a canonical (constant reference) version of a point.
+   * @param {Point} point - The point to find the canonical representation of.
+   * @returns {Point} The canonical point.
+   */
+  static intern(point) {
+    const canon = canonical.get(point.toString());
+    if (!canon) {
+      canonical.set(point.toString(), point);
+      return point;
+    }
+    return canon;
+  }
 
   /**
    * A cached version of this.toString()
@@ -32,6 +49,12 @@ export default class Point extends Array {
   }
 
   toString() { return this.#key; }
+
+  /**
+   * Gets a canonical (constant reference) version of a HexPoint.
+   * @returns {Point} The canonical HexPoint.
+   */
+  intern() { return Point.intern(this); }
 
   /**
    * Checks whether this point is equal to another point.
@@ -64,7 +87,7 @@ export default class Point extends Array {
   /**
    * Divides the point by a scalar factor.
    * @param {number} other - The scalar divisor.
-   * @returns The quotient of this point divided by a scalar factor.
+   * @returns {Point} The quotient of this point divided by a scalar factor.
    */
   divide(other) { return new this.constructor(...divide(this, other)); }
 

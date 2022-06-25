@@ -1,24 +1,41 @@
 import Point from '../point/Point';
 
+/** @type {Map<string, HexPoint>} */
+const canonical = new Map();
+
 /** HexPoint represents a point on a hexagonal grid with two principal axes. */
 export default class HexPoint extends Point {
   /**
-   * The origin hex point.
+   * The canonical origin hex point.
    * @readonly
    */
-  static origin = new HexPoint(0, 0);
+  static origin = new HexPoint(0, 0).intern();
 
   /**
-   * The six possible directions for adjacent hex traversal.
+   * Gets a canonical (constant reference) version of a point.
+   * @param {HexPoint} point - The point to find the canonical representation of.
+   * @returns {HexPoint} The canonical point.
+   */
+  static intern(point) {
+    const canon = canonical.get(point.toString());
+    if (!canon) {
+      canonical.set(point.toString(), point);
+      return point;
+    }
+    return canon;
+  }
+
+  /**
+   * The six possible directions for adjacent hex traversal (canonical).
    * @readonly
    */
   static steps = [
-    new HexPoint(1, 0),
-    new HexPoint(0, 1),
-    new HexPoint(-1, 1),
-    new HexPoint(-1, 0),
-    new HexPoint(0, -1),
-    new HexPoint(1, -1),
+    new HexPoint(1, 0).intern(),
+    new HexPoint(0, 1).intern(),
+    new HexPoint(-1, 1).intern(),
+    new HexPoint(-1, 0).intern(),
+    new HexPoint(0, -1).intern(),
+    new HexPoint(1, -1).intern(),
   ];
 
   /**
@@ -26,6 +43,12 @@ export default class HexPoint extends Point {
    * @readonly
    */
   static argSteps = [...Array(6).keys()];
+
+  /**
+   * Gets a canonical (constant reference) version of a HexPoint.
+   * @returns {HexPoint} The canonical HexPoint.
+   */
+  intern() { return HexPoint.intern(this); }
 
   /**
    * Steps from this hex to an adjacent one in a direction specified by a number from 0-5 starting
@@ -50,19 +73,19 @@ export default class HexPoint extends Point {
 }
 
 /**
- * A tuple of a hex point and a number 0-5 indicating a specific edge (clockwise
- * starting from the right).
+ * A tuple of a hex point and a number 0-5 indicating a specific edge index (clockwise starting
+ * from the right).
  * @typedef {[HexPoint, number]} HexPointEdge
  */
 
 /**
- * A number where each bit 0-5 is a flag representing the corresponding edge of
- * a hex (clockwise starting from the right).
+ * A number where each bit 0-5 is a flag representing the corresponding edge of a hex (clockwise
+ * starting from the right).
  * @typedef {number} Edges
  */
 
 /**
- * A tuple of a hex point and a number where each bit 0-5 is a flag representing
- * the corresponding edge (clockwise starting from the right).
+ * A tuple of a hex point and a number where each bit 0-5 is a flag representing the corresponding
+ * edge (clockwise starting from the right).
  * @typedef {[HexPoint, Edges]} HexPointEdges
  */
