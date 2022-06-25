@@ -60,7 +60,7 @@ describe('Delete tests.', () => {
   });
 
   test('Valid edge (no split).', () => {
-    // Delete a point that won't cause a split.
+    /** Delete a point that won't cause a split. */
     expect(comp1.delete(points.get('-1,1'))).toEqual([]);
     expect(comp1.has(points.get('-1,1'))).toBe(false);
   });

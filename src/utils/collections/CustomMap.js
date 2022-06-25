@@ -55,7 +55,7 @@ export default class CustomMap {
    * will be used to compare keys in the map.
    */
   constructor(entries, hashFn, equalFn) {
-    // Determine the map type based on whether hashFn and equalFn are defined.
+    /** Determine the map type based on whether hashFn and equalFn are defined. */
     if (!hashFn) this.#type = Types.Simple;
     else {
       this.#hashFn = hashFn;
@@ -66,13 +66,13 @@ export default class CustomMap {
       }
     }
 
-    // Check if entries is a cloneable instance of CustomMap.
+    /** Check if entries is a cloneable instance of CustomMap. */
     if (
       entries instanceof CustomMap
       && this.#hashFn === entries.#hashFn
       && this.#equalFn === entries.#equalFn
     ) {
-      // Clone the provided CustomSet instance.
+      /** Clone the provided CustomSet instance. */
       switch (entries.#type) {
         case Types.Simple:
         case Types.CustomHash:
@@ -87,7 +87,7 @@ export default class CustomMap {
         default: throw new Error(typeErrorMessage + this.#type);
       }
     } else {
-      // Initialize the CustomMap with the initial values, if provided.
+      /** Initialize the CustomMap with the initial values, if provided. */
       this.#map = new Map();
       if (entries instanceof Array) entries.forEach(([key, value]) => this.set(key, value));
       else entries?.forEach((value, key) => this.set(key, value));

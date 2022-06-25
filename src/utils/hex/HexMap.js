@@ -4,6 +4,8 @@ import HexComponent from './HexComponent';
 /** @typedef {import('./HexPoint').HexPointEdge} HexPointEdge */
 /** @typedef {import('./HexPoint').Edges} Edges */
 
+// TODO: Reimplement using HexSet.
+
 /**
  * HexMap is an extension of PointMap which keeps track of all connected components of hexes within
  * the map.
@@ -48,7 +50,7 @@ export default class HexMap extends PointMap {
    */
   constructor(entries) {
     if (entries instanceof HexMap) {
-      // Clone the provided instance of HexMap.
+      /** Clone the provided instance of HexMap. */
       super(entries);
       this.#edges = new PointMap(entries.#edges);
       this.#adjacent = new PointMap(entries.#adjacent);
@@ -59,7 +61,7 @@ export default class HexMap extends PointMap {
         newComponent.forEach((point) => this.#componentPoints.set(point, newComponent));
       });
     } else {
-      // Initialize a new HexMap.
+      /** Initialize a new HexMap. */
       super();
 
       this.#edges = new PointMap();
@@ -83,7 +85,7 @@ export default class HexMap extends PointMap {
     let edges = this.#edges.get(point);
     const trace = /** @type {BorderTrace} */ ([]);
 
-    // Follow along the border edge.
+    /** Follow along the border edge. */
     do {
       trace.push([point, i]);
       i = (i + 1) % 6;
@@ -103,7 +105,7 @@ export default class HexMap extends PointMap {
   clear() {
     super.clear();
 
-    // Clear all components.
+    /** Clear all components. */
     this.#edges.clear();
     this.#adjacent.clear();
     this.#components.clear();
@@ -117,7 +119,7 @@ export default class HexMap extends PointMap {
    */
   delete(point) {
     if (super.delete(point)) {
-      // Update the surrounding edge and adjacent hexes.
+      /** Update the surrounding edge and adjacent hexes. */
       this.#edges.delete(point);
       let edges = 0;
 
@@ -135,7 +137,7 @@ export default class HexMap extends PointMap {
         }
       });
 
-      // Update the component that contained this hex.
+      /** Update the component that contained this hex. */
       const component = this.#componentPoints.get(point);
       this.#componentPoints.delete(point);
 
@@ -143,7 +145,7 @@ export default class HexMap extends PointMap {
       else {
         this.#adjacent.set(point, edges);
 
-        // If deleting this hex splits its component, add the split off components to this map.
+        /** If deleting this hex splits its component, add the split off components to this map. */
         component.delete(point).forEach((newComponent) => {
           this.#components.add(newComponent);
           newComponent.forEach((otherPoint) => this.#componentPoints.set(otherPoint, newComponent));
@@ -164,7 +166,7 @@ export default class HexMap extends PointMap {
    */
   set(point, value) {
     if (!this.has(point)) {
-      // Update the surrounding edge and adjacent hexes.
+      /** Update the surrounding edge and adjacent hexes. */
       this.#adjacent.delete(point);
       let edges = 0;
       let component = /** @type {HexComponent} */ (null);
@@ -177,7 +179,7 @@ export default class HexMap extends PointMap {
           if (!adjEdges) this.#edges.delete(adjPoint);
           else this.#edges.set(adjPoint, adjEdges);
 
-          // Merge all adjacent components into one.
+          /** Merge all adjacent components into one. */
           const adjComponent = this.#componentPoints.get(adjPoint);
           if (!component) {
             component = adjComponent;
@@ -193,7 +195,7 @@ export default class HexMap extends PointMap {
         }
       });
 
-      // Add the hex's component reference.
+      /** Add the hex's component reference. */
       if (edges) {
         this.#edges.set(point, edges);
         if (!component) {
@@ -241,10 +243,10 @@ export default class HexMap extends PointMap {
    * @returns {HexMap<V>} This Hexmap.
    */
   merge(src) {
-    // Validate arguments.
+    /** Validate arguments. */
     if (this.overlaps(src)) throw new Error('Provided source HexMap must not overlap this HexMap.');
 
-    // Merge source component one hex at a time.
+    /** Merge source component one hex at a time. */
     src.forEach((value, point) => this.set(point, value));
     return this;
   }
@@ -260,10 +262,10 @@ export default class HexMap extends PointMap {
    * @returns {BorderTrace} An array of point-edge tuples.
    */
   perimeter() {
-    // Validate internal state.
+    /** Validate internal state. */
     if (!this.isConnected()) throw new Error('HexMap is not connected.');
 
-    // Get perimeter trace.
+    /** Get perimeter trace. */
     const component = /** @type {HexComponent} */ (this.#components.values().next().value);
     const [point, edges] = component.perimeter()[0];
     let i = 0;
@@ -277,10 +279,10 @@ export default class HexMap extends PointMap {
    * @returns {BorderTrace[]} An array of arrays of point-edge tuples.
    */
   holes() {
-    // Validate internal state.
+    /** Validate internal state. */
     if (!this.isConnected()) throw new Error('HexMap is not connected.');
 
-    // Get hole traces.
+    /** Get hole traces. */
     const component = /** @type {HexComponent} */ (this.#components.values().next().value);
     return component.holes().map((hole) => {
       const [point, edges] = hole[0];
@@ -298,7 +300,7 @@ export default class HexMap extends PointMap {
    * @returns {HexMap<V>} The translated HexMap.
    */
   translate(translation) {
-    // Initialize a new HexMap and translate and copy this one.
+    /** Initialize a new HexMap and translate and copy this one. */
     const newMap = /** @type {HexMap<V>} */ (new this.constructor());
     this.forEach((value, point) => super.set.call(newMap, point.add(translation), value));
     this.#edges.forEach((value, point) => newMap.#edges.set(point.add(translation), value));
@@ -320,10 +322,10 @@ export default class HexMap extends PointMap {
    * @returns {HexMap<V>} A new HexMap containing only the chosen component.
    */
   getComponent(start) {
-    // Validate arguments.
+    /** Validate arguments. */
     if (!this.has(start)) throw new Error('Must provide a starting point in this HexMap.');
 
-    // Initialize new HexMap and copy the chosen component.
+    /** Initialize new HexMap and copy the chosen component. */
     const newMap = /** @type {HexMap<V>} */ (new this.constructor());
     const component = this.#componentPoints.get(start);
     const newComponent = new HexComponent(component);

@@ -244,7 +244,7 @@ describe('Component tests.', () => {
   test('Merging components with holes (valid).', () => {
     const map4 = map3.translate(points.get('0,-1'));
 
-    // Merge map 2 and map 1, add (1,0) to make a hole.
+    /** Merge map 2 and map 1, add (1,0) to make a hole. */
     map2.merge(map1).set(points.get('1,0'), 'Creates a loop.');
     const holes = map2.holes();
     expect(holes).toHaveLength(1);
@@ -263,7 +263,7 @@ describe('Component tests.', () => {
     expect(map2.adjacent()).toHaveLength(20);
     expect(map2.perimeter()).toHaveLength(32);
 
-    // Merge map 4 and the previous merge. Should fill in the hole.
+    /** Merge map 4 and the previous merge. Should fill in the hole. */
     expect(map4.merge(map2)).toBe(map4);
     expect(map4.isConnected()).toBe(true);
     expect(map4.holes()).toHaveLength(0);
@@ -273,14 +273,14 @@ describe('Component tests.', () => {
     expect(edges).not.toContainEqual(points.get('0,0'));
     expect(edges).not.toContainEqual(points.get('1,-1'));
 
-    // Create a hole, should make (0,0) an interior edge.
+    /** Create a hole, should make (0,0) an interior edge. */
     map4.delete(points.get('1,-1'));
     edges = map4.edges();
     expect(edges).toHaveLength(12);
     expect(edges).toContainEqual(points.get('0,0'));
     expect(map4.adjacent()).toHaveLength(19);
 
-    // Delete an entry to split the component.
+    /** Delete an entry to split the component. */
     map4.delete(points.get('-1,1'));
     expect(map4.isConnected()).toBe(false);
     expect(() => map4.holes()).toThrowError();

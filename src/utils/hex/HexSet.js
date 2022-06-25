@@ -48,7 +48,7 @@ export default class HexSet extends PointSet {
    */
   constructor(entries) {
     if (entries instanceof HexSet) {
-      // Clone the provided instance of HexSet.
+      /** Clone the provided instance of HexSet. */
       super(entries);
       this.#edges = new PointMap(entries.#edges);
       this.#adjacent = new PointMap(entries.#adjacent);
@@ -59,7 +59,7 @@ export default class HexSet extends PointSet {
         newComponent.forEach((point) => this.#componentPoints.set(point, newComponent));
       });
     } else {
-      // Initialize a new HexSet.
+      /** Initialize a new HexSet. */
       super();
 
       this.#edges = new PointMap();
@@ -83,7 +83,7 @@ export default class HexSet extends PointSet {
     let edges = this.#edges.get(point);
     const trace = /** @type {BorderTrace} */ ([]);
 
-    // Follow along the border edge.
+    /** Follow along the border edge. */
     do {
       trace.push([point, i]);
       i = (i + 1) % 6;
@@ -106,7 +106,7 @@ export default class HexSet extends PointSet {
    */
   add(point) {
     if (!this.has(point)) {
-      // Update the surrounding edge and adjacent hexes.
+      /** Update the surrounding edge and adjacent hexes. */
       this.#adjacent.delete(point);
       let edges = 0;
       let component = /** @type {HexComponent} */ (null);
@@ -119,7 +119,7 @@ export default class HexSet extends PointSet {
           if (!adjEdges) this.#edges.delete(adjPoint);
           else this.#edges.set(adjPoint, adjEdges);
 
-          // Merge all adjacent components into one.
+          /** Merge all adjacent components into one. */
           const adjComponent = this.#componentPoints.get(adjPoint);
           if (!component) {
             component = adjComponent;
@@ -135,7 +135,7 @@ export default class HexSet extends PointSet {
         }
       });
 
-      // Add the hex's component reference.
+      /** Add the hex's component reference. */
       if (edges) {
         this.#edges.set(point, edges);
         if (!component) {
@@ -155,7 +155,7 @@ export default class HexSet extends PointSet {
   clear() {
     super.clear();
 
-    // Clear all components.
+    /** Clear all components. */
     this.#edges.clear();
     this.#adjacent.clear();
     this.#components.clear();
@@ -169,7 +169,7 @@ export default class HexSet extends PointSet {
    */
   delete(point) {
     if (super.delete(point)) {
-      // Update the surrounding edge and adjacent hexes.
+      /** Update the surrounding edge and adjacent hexes. */
       this.#edges.delete(point);
       let edges = 0;
 
@@ -187,7 +187,7 @@ export default class HexSet extends PointSet {
         }
       });
 
-      // Update the component that contained this hex.
+      /** Update the component that contained this hex. */
       const component = this.#componentPoints.get(point);
       this.#componentPoints.delete(point);
 
@@ -195,7 +195,7 @@ export default class HexSet extends PointSet {
       else {
         this.#adjacent.set(point, edges);
 
-        // If deleting this hex splits its component, add the split off components to this set.
+        /** If deleting this hex splits its component, add the split off components to this set. */
         component.delete(point).forEach((newComponent) => {
           this.#components.add(newComponent);
           newComponent.forEach((otherPoint) => this.#componentPoints.set(otherPoint, newComponent));
@@ -240,10 +240,10 @@ export default class HexSet extends PointSet {
    * @returns {HexSet} This Hexmap.
    */
   merge(src) {
-    // Validate arguments.
+    /** Validate arguments. */
     if (this.overlaps(src)) throw new Error('Provided source HexSet must not overlap this HexSet.');
 
-    // Merge source component one hex at a time.
+    /** Merge source component one hex at a time. */
     src.forEach((point) => this.add(point));
     return this;
   }
@@ -259,10 +259,10 @@ export default class HexSet extends PointSet {
    * @returns {BorderTrace} An array of point-edge tuples.
    */
   perimeter() {
-    // Validate internal state.
+    /** Validate internal state. */
     if (!this.isConnected()) throw new Error('HexSet is not connected.');
 
-    // Get perimeter trace.
+    /** Get perimeter trace. */
     const component = /** @type {HexComponent} */ (this.#components.values().next().value);
     const [point, edges] = component.perimeter()[0];
     let i = 0;
@@ -276,10 +276,10 @@ export default class HexSet extends PointSet {
    * @returns {BorderTrace[]} An array of arrays of point-edge tuples.
    */
   holes() {
-    // Validate internal state.
+    /** Validate internal state. */
     if (!this.isConnected()) throw new Error('HexSet is not connected.');
 
-    // Get hole traces.
+    /** Get hole traces. */
     const component = /** @type {HexComponent} */ (this.#components.values().next().value);
     return component.holes().map((hole) => {
       const [point, edges] = hole[0];
@@ -297,7 +297,7 @@ export default class HexSet extends PointSet {
    * @returns {HexSet} The translated HexSet.
    */
   translate(translation) {
-    // Initialize a new HexSet and translate and copy this one.
+    /** Initialize a new HexSet and translate and copy this one. */
     const newSet = /** @type {HexSet} */ (new this.constructor());
     this.forEach((point) => super.add.call(newSet, point.add(translation)));
     this.#edges.forEach((value, point) => newSet.#edges.set(point.add(translation), value));
@@ -319,10 +319,10 @@ export default class HexSet extends PointSet {
    * @returns {HexSet} A new HexSet containing only the chosen component.
    */
   getComponent(start) {
-    // Validate arguments.
+    /** Validate arguments. */
     if (!this.has(start)) throw new Error('Must provide a starting point in this HexSet.');
 
-    // Initialize new HexSet and copy the chosen component.
+    /** Initialize new HexSet and copy the chosen component. */
     const newSet = /** @type {HexSet} */ (new this.constructor());
     const component = this.#componentPoints.get(start);
     const newComponent = new HexComponent(component);

@@ -55,7 +55,7 @@ export default class CustomSet {
    * will be used to compare entries in the set.
    */
   constructor(values, hashFn, equalFn) {
-    // Determine the map type based on whether hashFn and equalFn are defined.
+    /** Determine the map type based on whether hashFn and equalFn are defined. */
     if (!hashFn) this.#type = Types.Simple;
     else {
       this.#hashFn = hashFn;
@@ -66,13 +66,13 @@ export default class CustomSet {
       }
     }
 
-    // Check if values is a cloneable instance of CustomSet.
+    /** Check if values is a cloneable instance of CustomSet. */
     if (
       values instanceof CustomSet
       && this.#hashFn === values.#hashFn
       && this.#equalFn === values.#equalFn
     ) {
-      // Clone the provided CustomSet instance.
+      /** Clone the provided CustomSet instance. */
       switch (values.#type) {
         case Types.Simple: this.#set = new Set(values.#set); break;
         case Types.CustomHash: this.#set = new Map(values.#set); break;
@@ -85,7 +85,7 @@ export default class CustomSet {
         default: throw new Error(typeErrorMessage + this.#type);
       }
     } else {
-      // Initialize the CustomSet with the initial values, if provided.
+      /** Initialize the CustomSet with the initial values, if provided. */
       this.#set = (this.#type === Types.Simple) ? new Set() : new Map();
       values?.forEach((value) => this.add(value));
     }

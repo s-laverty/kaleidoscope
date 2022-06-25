@@ -237,7 +237,7 @@ describe('Component tests.', () => {
   test('Merging components with holes (valid).', () => {
     const set4 = set3.translate(points.get('0,-1'));
 
-    // Merge set 2 and set 1, add (1,0) to make a hole.
+    /** Merge set 2 and set 1, add (1,0) to make a hole. */
     set2.merge(set1).add(points.get('1,0'));
     const holes = set2.holes();
     expect(holes).toHaveLength(1);
@@ -256,7 +256,7 @@ describe('Component tests.', () => {
     expect(set2.adjacent()).toHaveLength(20);
     expect(set2.perimeter()).toHaveLength(32);
 
-    // Merge set 4 and the previous merge. Should fill in the hole.
+    /** Merge set 4 and the previous merge. Should fill in the hole. */
     expect(set4.merge(set2)).toBe(set4);
     expect(set4.isConnected()).toBe(true);
     expect(set4.holes()).toHaveLength(0);
@@ -266,14 +266,14 @@ describe('Component tests.', () => {
     expect(edges).not.toContainEqual(points.get('0,0'));
     expect(edges).not.toContainEqual(points.get('1,-1'));
 
-    // Create a hole, should make (0,0) an interior edge.
+    /** Create a hole, should make (0,0) an interior edge. */
     set4.delete(points.get('1,-1'));
     edges = set4.edges();
     expect(edges).toHaveLength(12);
     expect(edges).toContainEqual(points.get('0,0'));
     expect(set4.adjacent()).toHaveLength(19);
 
-    // Delete an entry to split the component.
+    /** Delete an entry to split the component. */
     set4.delete(points.get('-1,1'));
     expect(set4.isConnected()).toBe(false);
     expect(() => set4.holes()).toThrowError();

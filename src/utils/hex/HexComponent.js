@@ -52,7 +52,7 @@ export default class HexComponent {
    */
   constructor(start = HexPoint.origin) {
     if (start instanceof HexComponent) {
-      // Clone the provided Component instance.
+      /** Clone the provided Component instance. */
       this.#points = new PointSet(start.#points);
 
       start.#borders.forEach((border) => {
@@ -66,7 +66,7 @@ export default class HexComponent {
         if (border === start.#perimeter) this.#perimeter = newBorder;
       });
     } else {
-      // Initialize a new component with a starting point.
+      /** Initialize a new component with a starting point. */
       this.#points = new PointSet().add(start);
       this.#perimeter = new PointSet();
       this.#borders.add(this.#perimeter);
@@ -91,12 +91,12 @@ export default class HexComponent {
    * @returns {Border} The new border formed by splitting off from the starting point.
    */
   #splitBorder(src, start) {
-    // Validate arguments.
+    /** Validate arguments. */
     if (!src.has(start)) {
       throw new Error('Must provide a starting border node within the source border.');
     }
 
-    // Initialize the new border.
+    /** Initialize the new border. */
     const dest = new PointSet();
     this.#borders.add(dest);
     let concavity = 0;
@@ -118,7 +118,7 @@ export default class HexComponent {
     };
     transfer(start);
 
-    // If the concavity of dest is less than 0, then it is the new perimeter of the component.
+    /** If the concavity of dest is less than 0, then it is the new perimeter of the component. */
     if (concavity < 0) this.#perimeter = dest;
 
     return dest;
@@ -131,10 +131,10 @@ export default class HexComponent {
    * @returns {HexComponent} The new component formed by splitting off from the starting point.
    */
   #split(border, start) {
-    // Validate arguments.
+    /** Validate arguments. */
     if (!this.has(start)) throw new Error('Must provide a hex point that is in this component.');
 
-    // Initialize the new component.
+    /** Initialize the new component. */
     const component = new HexComponent(start);
     component.#perimeter.clear();
     component.#borderPoints.clear();
@@ -145,19 +145,19 @@ export default class HexComponent {
      * @param {HexPoint} point - The point to move from this to the new component.
      */
     const transfer = (point) => {
-      // Transfer this point
+      /** Transfer this point */
       this.#points.delete(point);
       component.#points.add(point);
-      // Check all adjacent non-border points.
+      /** Check all adjacent non-border points. */
       point.adjacent.forEach((adjPoint, i) => {
         if (this.has(adjPoint)) transfer(adjPoint);
         else if (this.#borderPoints.has(adjPoint)) {
-          // Update the adjacent border node.
+          /** Update the adjacent border node. */
           const adjData = this.#borderPoints.get(adjPoint);
 
-          // Check if the adjacent border node is part of the shared border.
+          /** Check if the adjacent border node is part of the shared border. */
           if (adjData[1] === border) {
-            // Split the shared border node between this component and the new component.
+            /** Split the shared border node between this component and the new component. */
             const edge = 1 << (i + 3) % 6;
             adjData[0] &= ~edge;
             if (!adjData[0]) {
@@ -165,7 +165,7 @@ export default class HexComponent {
               this.#borderPoints.delete(adjPoint);
             }
 
-            // Add the border edge to the new component.
+            /** Add the border edge to the new component. */
             if (component.#perimeter.has(adjPoint)) {
               component.#borderPoints.get(adjPoint)[0] |= edge;
             } else {
@@ -173,7 +173,7 @@ export default class HexComponent {
               component.#borderPoints.set(adjPoint, [edge, border]);
             }
           } else {
-            // Transfer ownership of the separate border to the new comopnent.
+            /** Transfer ownership of the separate border to the new comopnent. */
             this.#borders.delete(adjData[1]);
             component.#borders.add(adjData[1]);
             adjData[1].forEach((borderPoint) => {
@@ -187,7 +187,9 @@ export default class HexComponent {
     };
     transfer(start);
 
-    // If the new component took this component's perimeter, then it must surround this component.
+    /**
+     * If the new component took this component's perimeter, then it must surround this component.
+     */
     if (component.#borders.has(this.#perimeter)) {
       component.#perimeter = this.#perimeter;
       this.#perimeter = border;
@@ -211,13 +213,13 @@ export default class HexComponent {
    * @returns {HexComponent} The component.
    */
   add(point) {
-    // Validate arguments.
+    /** Validate arguments. */
     if (!this.#borderPoints.has(point)) {
       throw new Error('Must provide a hex that is adjacent to this component.');
     }
     const { adjacent } = point;
 
-    // Replace the border node with a component hex.
+    /** Replace the border node with a component hex. */
     const [edges, border] = this.#borderPoints.get(point);
     border.delete(point);
     this.#borderPoints.delete(point);
@@ -225,11 +227,11 @@ export default class HexComponent {
 
     if (!border.size) this.#borders.delete(border);
     else {
-      // Update the adjacent border nodes around the new hex.
+      /** Update the adjacent border nodes around the new hex. */
       adjacent.forEach((adjPoint, i) => {
         if (edges & (1 << i)) return;
 
-        // Create new adjacent border nodes and update the edges of each existing one.
+        /** Create new adjacent border nodes and update the edges of each existing one. */
         const edge = 1 << (i + 3) % 6;
         if (border.has(adjPoint)) this.#borderPoints.get(adjPoint)[0] |= edge;
         else {
@@ -258,14 +260,14 @@ export default class HexComponent {
    * a result of removing the hex.
    */
   delete(point) {
-    // Validate arguments.
+    /** Validate arguments. */
     if (!this.has(point)) throw new Error('Must provide a hex point that is in this component.');
     if (this.size === 1) throw new Error("Can't delete the only hex in this component.");
 
-    // Remove the hex.
+    /** Remove the hex. */
     this.#points.delete(point);
 
-    // Determine the edges of the new border node and update adjacent border nodes.
+    /** Determine the edges of the new border node and update adjacent border nodes. */
     let edges = 0;
     let border = /** @type {Border} */ (null);
     let diffBorders = 1;
@@ -276,10 +278,10 @@ export default class HexComponent {
         const adjData = this.#borderPoints.get(adjPoint);
         const [, adjBorder] = adjData;
 
-        // Merge all adjacent borders into one.
+        /** Merge all adjacent borders into one. */
         if (!border) border = adjBorder;
         else if (adjBorder !== border) {
-          // Merge this border into the first one.
+          /** Merge this border into the first one. */
           ++diffBorders;
           this.#borders.delete(adjBorder);
 
@@ -290,7 +292,7 @@ export default class HexComponent {
           });
         }
 
-        // Update adjacent border nodes, possibly deleting some.
+        /** Update adjacent border nodes, possibly deleting some. */
         adjData[0] &= ~(1 << (i + 3) % 6);
 
         if (!adjData[0]) {
@@ -300,10 +302,10 @@ export default class HexComponent {
       }
     });
 
-    // If there was no border around the removed point, then it creates a new hole.
+    /** If there was no border around the removed point, then it creates a new hole. */
     if (!border) border = new PointSet();
 
-    // Add the removed point as a border node.
+    /** Add the removed point as a border node. */
     border.add(point);
     this.#borderPoints.set(point, [edges, border]);
 
@@ -351,7 +353,7 @@ export default class HexComponent {
    * @returns {HexComponent} The component.
    */
   merge(src, start1, start2) {
-    // Validate arguments.
+    /** Validate arguments. */
     if (this.overlaps(src)) throw new Error('Source component must not overlap this component.');
 
     if (!this.has(start1)) throw new Error('Must provide a starting point in this component.');
@@ -362,10 +364,10 @@ export default class HexComponent {
       throw new Error('Must provide starting points that are adjacent to each other.');
     }
 
-    // Merge the hexes from the source component into this one.
+    /** Merge the hexes from the source component into this one. */
     src.forEach((point) => this.#points.add(point));
 
-    // Merge the shared border.
+    /** Merge the shared border. */
     const [, border] = this.#borderPoints.get(start2);
     border.forEach((point) => {
       if (this.has(point)) {
@@ -388,7 +390,7 @@ export default class HexComponent {
       }
     });
 
-    // Merge non-shared borders.
+    /** Merge non-shared borders. */
     src.#borders.forEach((otherBorder) => {
       if (otherBorder === srcBorder) return;
 
@@ -402,7 +404,7 @@ export default class HexComponent {
       if (border === this.#perimeter && otherBorder === src.#perimeter) this.#perimeter = newBorder;
     });
 
-    // Split the merged border into connected sequences of border nodes.
+    /** Split the merged border into connected sequences of border nodes. */
     while (border.size) this.#splitBorder(border, border.values()[0]);
 
     this.#borders.delete(border);
@@ -437,13 +439,13 @@ export default class HexComponent {
    * @returns {HexComponent} The translated component.
    */
   translate(translation) {
-    // Initialize the new component.
+    /** Initialize the new component. */
     const component = /** @type {HexComponent} */ (new this.constructor());
     component.#points.clear();
     component.#perimeter.clear();
     component.#borderPoints.clear();
 
-    // Copy a translated version of this into the new component.
+    /** Copy a translated version of this into the new component. */
     this.forEach((point) => component.#points.add(point.add(translation)));
 
     this.#borders.forEach((border) => {
