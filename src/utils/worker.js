@@ -1,24 +1,34 @@
-/*
- * worker.js runs all code synchronously, so hopefully it's not necessary to use a message id.
+import { tessellate, HexSet, HexPoint } from './kaleidoscope';
+
+/** worker.js runs all code synchronously, so hopefully it's not necessary to use a message id. */
+
+/**
+ * A message telling this worker what to do.
+ * @typedef {object} WorkerMessage
+ * @prop {string} type - The message type.
+ * @prop {[number, number][]} [tileShape] - Hexagonal tile data for tessellation.
  */
 
-import { HexPoint, HexTile } from './HexUtils';
-import { tessellate } from './KaleidoscopeUtils';
-
-onmessage = ({data: {type, ...message}}) => {
+/**
+ * Handles incoming messages from main process.
+ * @param {MessageEvent<WorkerMessage>} message - The message telling this worker what to do.
+ */
+const messageHandler = ({ data: { type, ...message } }) => {
   try {
     switch (type) {
       case 'tessellate': {
-        let tiledata = new HexTile(message.tiledata.map(point => [new HexPoint(...point), null]));
-        postMessage(tessellate(tiledata));
+        const { tileShape: hexes } = message;
+        const tileShape = new HexSet(hexes.map((point) => new HexPoint(...point)));
+        postMessage(tessellate(tileShape));
       } break;
       default: {
         console.warn(`Unrecognized message type: ${type}`);
         postMessage(null);
       }
     }
-  } catch(error) {
-    console.error(error);
+  } catch (error) {
+    console.trace(error);
     postMessage(null);
   }
 };
+onmessage = messageHandler;
