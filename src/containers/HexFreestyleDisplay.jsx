@@ -44,6 +44,7 @@ export default function HexFreestyleDisplay({
     };
   }, [dispatch]);
 
+  // TODO fix chunk bug
   /** Calculate which chunks are visible on-screen and load them. */
   const chunks = /** @type {JSX.Element[]} */ ([]);
   /** @type {Rect} */
