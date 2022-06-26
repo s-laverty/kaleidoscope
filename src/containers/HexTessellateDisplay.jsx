@@ -35,6 +35,14 @@ export default function HexTessellateDisplay({
     hexColors, tileShape, tessellations, tessellationIndex, tool, zoom, showOutline,
   }, dispatch,
 }) {
+  /**
+   * Set up a watcher to handle a changing tile shape in tessellation mode.
+   */
+  useEffect(
+    () => dispatch({ type: DispatchTypes.set, name: 'tessellationPending', value: true }),
+    [tileShape, dispatch],
+  );
+
   /** Calculate tessellation and possible swaps. */
   const tessellation = tessellations?.[tessellationIndex];
   const mathJSTessellation = useMemo(

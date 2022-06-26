@@ -69,8 +69,11 @@ export default function Kaleidoscope() {
         if (event.ctrlKey) {
           switch (event.key) {
             case 'z':
-              if (event.shiftKey) dispatch({ type: DispatchTypes.redo });
-              else dispatch({ type: DispatchTypes.undo });
+              dispatch({ type: DispatchTypes.undo });
+              break;
+            case 'Z':
+              // TODO add ctrl shift z text
+              dispatch({ type: DispatchTypes.redo });
               break;
             case 'y': dispatch({ type: DispatchTypes.redo }); break;
             default: break;
@@ -85,15 +88,6 @@ export default function Kaleidoscope() {
       window.removeEventListener('keydown', handleKeyEvent);
     };
   }, []);
-
-  /**
-   * Set up a watcher to handle a changing tile shape in tessellation mode.
-   * @see HexTessellateState.tessellationPending
-   */
-  useEffect(
-    () => dispatch({ type: DispatchTypes.set, name: 'tessellationPending', value: true }),
-    [globalState.hexTessellate.tileShape],
-  );
 
   const {
     shiftKey, grabbing, sidebar, modal, mode,
