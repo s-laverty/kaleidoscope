@@ -3,14 +3,14 @@ import { flatten, inv, multiply } from 'mathjs';
 import Package from '../../package.json';
 import {
   Hex, History, Modes, Save, Tools,
-} from './config';
+} from '../config';
 import HexMap from './hex/HexMap';
 import HexPoint from './hex/HexPoint';
 import HexSet from './hex/HexSet';
 import Point from './point/Point';
 import PointMap from './point/PointMap';
 import PointSet from './point/PointSet';
-/** @typedef {import('./config').Modals} Modals */
+/** @typedef {import('../config').Modals} Modals */
 
 /** Utility module aggregation. */
 

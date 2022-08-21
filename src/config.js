@@ -6,8 +6,8 @@
 import {
   add, inv, multiply, transpose,
 } from 'mathjs';
-/** @typedef {import('./kaleidoscope').HexFreestyleState} HexFreestyleState */
-/** @typedef {import('./kaleidoscope').HexTessellateState} HexTessellateState */
+/** @typedef {import('./utils/kaleidoscope').HexFreestyleState} HexFreestyleState */
+/** @typedef {import('./utils/kaleidoscope').HexTessellateState} HexTessellateState */
 
 /**
  * Kaleidoscope application modes.
